@@ -75,7 +75,7 @@ class TransactionalSavingsController extends Controller
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => false,
-                'message' => $th->message()
+                'message' => $th->getMessage()
             ], 500);
         }
     }

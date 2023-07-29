@@ -2,6 +2,8 @@
 
 /** @var \Laravel\Lumen\Routing\Router $router */
 
+use App\Utils\Roles;
+
 /*
 |--------------------------------------------------------------------------
 | Application Routes
@@ -16,6 +18,14 @@
 $router->get('/', function () use ($router) {
     return $router->app->version();
 });
+
+$router->group(['prefix' => 'auth'], function () use ($router) {
+    $router->post('/login', 'AuthController@login');
+    $router->delete('/logout', 'AuthController@logout');
+    $router->post('/refresh', 'AuthController@refresh');
+    $router->get('/me', ['middleware' => 'auth:' .implode(' ', Roles::$ALL), 'uses' => 'AuthController@getMe']);
+});
+
 
 //Table User Account
 function resourceUsers($router,$uri,$controller){

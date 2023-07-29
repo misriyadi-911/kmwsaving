@@ -2,8 +2,11 @@
 
 namespace App\Http\Middleware;
 
+use App\Utils\HttpResponse;
+use App\Utils\Roles;
 use Closure;
 use Illuminate\Contracts\Auth\Factory as Auth;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class Authenticate
 {
@@ -33,12 +36,45 @@ class Authenticate
      * @param  string|null  $guard
      * @return mixed
      */
-    public function handle($request, Closure $next, $guard = null)
+    public function handle($request, Closure $next, String $roles)
     {
-        if ($this->auth->guard($guard)->guest()) {
-            return response('Unauthorized.', 401);
+        $validateRoles = Roles::checkExistRole($roles);
+        
+        if (!$validateRoles) {
+            return HttpResponse::error('There is an invalid role in your route', 400);
         }
 
+        if (!$this->checkExistToken($request)) {
+            return HttpResponse::error('Token is required', 400);
+        }
+        $token = explode(' ', $request->header('Authorization'))[1];
+        $token = JWTAuth::setToken($token)->getPayload();
+
+        if (!$this->checkRole($validateRoles)) {
+            return HttpResponse::error('You do not have permission to access this route', 403);
+        }
         return $next($request);
+    }
+
+    public function checkRole($roles)
+    {
+        if (empty(auth()->user()->type)) {
+            return false;
+        }
+
+
+        foreach ($roles as $role) {
+            if (in_array(auth()->user()->type, [$role])) {
+                return true;
+            }
+        }
+    }
+
+    public function checkExistToken($request)
+    {
+        if ($request->header('Authorization')) {
+            return true;
+        }
+        return false;
     }
 }

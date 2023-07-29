@@ -13,15 +13,12 @@ return new class extends Migration
     {
         Schema::create('user_account', function (Blueprint $table) {
             $table->id('user_account_id');
-            $table->string('username',255);
-            $table->string('password',100);
-            $table->enum('type',array('admin','pengguna','jamaah'));
-            $table->string('thumbnail', 255);
+            $table->string('username');
+            $table->string('email');
+            $table->string('password', 100);
+            $table->enum('type', array('admin', 'pengguna', 'jamaah'));
+            $table->string('thumbnail');
             $table->timestamps();
-        });
-
-        Schema::table('user_account', function (Blueprint $table){
-            $table->string('email',100);
         });
     }
 

@@ -7,7 +7,9 @@ use Illuminate\Http\Request;
 
 class PilgrimsController extends Controller
 {
-    public function __construct(\App\Models\Pilgrims $pilgrim) {
+    protected $pilgrim;
+    
+    public function __construct(Pilgrims $pilgrim) {
         $this->pilgrim = $pilgrim;
     }
     /**
