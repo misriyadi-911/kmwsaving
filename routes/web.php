@@ -15,6 +15,9 @@ use App\Utils\Roles;
 |
 */
 
+// api/v1/
+
+
 $router->get('/', function () use ($router) {
     return $router->app->version();
 });
@@ -32,7 +35,7 @@ function resourceUsers($router,$uri,$controller){
     $router->get($uri,$controller.'@index');
     $router->post($uri,$controller.'@store');
     $router->get($uri.'/{id}',$controller.'@show');
-    $router->put($uri.'/{id}',$controller.'@update');
+    $router->post($uri.'/{id}',$controller.'@update');
 
     $router->patch($uri.'/{id}',$controller.'@update');
     $router->delete($uri.'/{id}',$controller.'@destroy');

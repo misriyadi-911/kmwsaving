@@ -19,11 +19,11 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
         UserAccount::create([
-            'username' => 'admin',
+            'username' => 'Administrator',
             'password' => app('hash')->make('qwerty123'),
             'email' => 'admin@gmail.com',
             'type' => 'admin',
-            'thumbnail' => 'https://i.ibb.co/0jZGZJd/IMG-20201230-120751.jpg',
+            'thumbnail' => 'https://api.unira.ac.id/img/profil/mhs/d9674b9d198eecaa13f3f057d5390a12.jpg',
         ]);
         UserAccount::create([
             'username' => 'Jamaah 1',

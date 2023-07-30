@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Admin;
+use App\Models\Pilgrims;
 use App\Models\User;
 use App\Utils\HttpResponse;
 use Illuminate\Http\Request;
@@ -57,7 +59,14 @@ class AuthController extends Controller
 
   public function getMe()
   {
-    return response()->json(auth()->user());
+    $me = auth()->user();
+    if($me->type == 'admin') {
+      $exist = Admin::join('user_account', 'admin.user_account_id', '=', 'user_account.user_account_id')->where('admin.user_account_id', $me->user_account_id)->first(); 
+    } else {
+      $exist = Pilgrims::join('user_account', 'pilgrims.user_account_id', '=', 'user_account.user_account_id')->where('pilgrims.user_account_id', $me->user_account_id)->first(); 
+    }
+    
+    return HttpResponse::success($exist, 'Get user success');
   }
 
   public function logout()

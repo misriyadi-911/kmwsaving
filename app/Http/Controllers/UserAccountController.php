@@ -7,36 +7,24 @@ use Illuminate\Http\Request;
 
 class UserAccountController extends Controller
 {
-    public function __construct(\App\Models\UserAccount $user) {
+    protected $user;
+    public function __construct(UserAccount $user)
+    {
         $this->user = $user;
     }
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+
     public function index()
     {
         $data = UserAccount::All();
         return response($data);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create()
     {
         //
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+
     public function store(Request $request)
     {
         try {
@@ -51,33 +39,23 @@ class UserAccountController extends Controller
                 'status'  => true,
                 'message' => response($data)
             ]);
-            
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => false,
                 'message' => $th->getMessage()
             ], 500);
         }
-
-        
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function show($id)
     {
-        
+
         try {
-            $data = UserAccount::where('user_account_id',$id)->get();
+            $data = UserAccount::where('user_account_id', $id)->get();
             return response()->json([
                 'status'  => true,
                 'message' => response($data)
             ]);
-            
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => false,
@@ -86,39 +64,29 @@ class UserAccountController extends Controller
         }
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, $id)
     {
         try {
-            $data = UserAccount::where('user_account_id',$id)->first();
-            $data->username = $request->input('username');
-            $data->email = $request->input('email');
-            $data->password = $request->input('password');
-            $data->type = $request->input('type');
-            $data->thumbnail = $request->input('thumbnail');
+            $data = UserAccount::where('user_account_id', $id)->first();
+            $data->username = $request->input('username') ? $request->input('username') : $data->username;
+            $data->email = $request->input('email') ? $request->input('email') : $data->email;
+            $data->password = $request->input('password') ? $request->input('password') : $data->password;
+            $data->type = $request->input('type') ? $request->input('type') : $data->type;
+            if ($request->file('thumbnail')) {
+                if ($data->thumbnail && file_exists('uploads/users/' . $data->thumbnail)) {
+                    unlink('uploads/users/' . $data->thumbnail);
+                }
+                $file = $request->file('thumbnail');
+                $filename = time() . '.' . $file->getClientOriginalExtension();
+                $request->file('thumbnail')->move('uploads/users/', $filename);
+                $data->thumbnail = '/uploads/users/' . $filename;
+            }
             $data->save();
             return response()->json([
                 'status'  => true,
-                'message' => response($data)
+                'message' => 'Data berhasil diupdate',
+                'data' => $data
             ]);
-            
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => false,
@@ -127,22 +95,15 @@ class UserAccountController extends Controller
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function destroy($id)
     {
         try {
-            $data = UserAccount::where('user_account_id',$id)->first();
+            $data = UserAccount::where('user_account_id', $id)->first();
             $data->delete();
             return response()->json([
                 'status'  => true,
                 'message' => 'Data berhasil dihapus'
             ]);
-            
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => false,
