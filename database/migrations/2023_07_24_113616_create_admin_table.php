@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('admin', function (Blueprint $table) {
             $table->id('employe_id');
             $table->bigInteger('user_account_id')->unsigned();
-            $table->integer('role_id');
             $table->text('address');
             $table->string('phone', 13);
             $table->enum('gender', array('laki-laki','perempuan'));

@@ -56,20 +56,9 @@ function resourceAdmin($router, $uri, $controller)
 }
 resourceAdmin($router, 'user/admin', 'AdminController');
 
-function resourceSaving($router, $uri, $controller)
-{
-    $router->get($uri, $controller . '@index');
-    $router->post($uri, $controller . '@store');
-    $router->get($uri . '/{id}', $controller . '@show');
-    $router->put($uri . '/{id}', $controller . '@update');
-
-    $router->patch($uri . '/{id}', $controller . '@update');
-    $router->delete($uri . '/{id}', $controller . '@destroy');
-}
-
-$router->group(['prefix' => 'saving-category'], function () use ($router) {
-    $router->get('/', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'SavingCategoriesController@getMe']);
-    $router->post('/', ['middleware' => 'auth:' . implode(' ', Roles::$pilgrim), 'uses' => 'SavingCategoriesController@store']);
+$router->group(['prefix' => 'saving-categories'], function () use ($router) {
+    $router->get('/', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'SavingCategoriesController@index']);
+    $router->post('/', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'SavingCategoriesController@store']);
     $router->get('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'SavingCategoriesController@show']);
     $router->put('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'SavingCategoriesController@update']);
     $router->delete('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'SavingCategoriesController@destroy']);

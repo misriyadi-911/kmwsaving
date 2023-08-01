@@ -25,6 +25,17 @@ class DatabaseSeeder extends Seeder
             'type' => 'admin',
             'thumbnail' => 'https://api.unira.ac.id/img/profil/mhs/d9674b9d198eecaa13f3f057d5390a12.jpg',
         ]);
+
+        Admin::create([
+            'user_account_id' => 1,
+            'address' => 'Jl. Raya Kampus UNIRA No. 1, Kec. Baiturrahman, Kota Banda Aceh, Aceh 23239',
+            'phone' => '085231339223',
+            'gender' => 'laki-laki',
+            'created_at' => '2021-07-24 11:36:16',
+            'updated_at' => '2021-07-24 11:36:16',
+        ]);
+
+
         UserAccount::create([
             'username' => 'Jamaah 1',
             'password' => app('hash')->make('qwerty123'),
@@ -33,6 +44,7 @@ class DatabaseSeeder extends Seeder
             'thumbnail' => 'https://i.ibb.co/0jZGZJd/IMG-20201230-120751.jpg',
         ]);
 
+        
         $categoris = ['Blue', 'Silver', 'Gold', 'Haji Plus', 'Haji Reguler'];
         $limits = [1000000, 2000000, 3000000, 4000000, 5000000];
         for ($i=0; $i < count($categoris); $i++) { 

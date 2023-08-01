@@ -14,8 +14,21 @@ class SavingCategoriesController extends Controller
 
     public function index()
     {
-        $data = SavingCategories::All();
-        return response($data);
+        $request = request()->all();
+        $page = isset($request['page']) ? $request['page'] : 1;
+        $request['limit'] = isset($request['limit']) ? $request['limit'] : 10;
+        $offset = ($page - 1) * $request['limit'];
+        $data = SavingCategories::offset($offset)->limit($request['limit'])->get();
+        return response()->json([
+            'status' => true,
+            'message' => 'Saving Categories Retrieved Successfully',
+            'data' => [
+                'totalPage' => ceil(SavingCategories::count() / $request['limit']),
+                'totalRows' => SavingCategories::count(),
+                'pageNumber' => $page,
+                'data' => $data,
+            ]
+        ]);
     }
 
     public function store(Request $request)
@@ -42,10 +55,11 @@ class SavingCategoriesController extends Controller
     public function show($id)
     {
         try {
-            $data = SavingCategories::where('saving_category_id', $id)->get();
+            $data = SavingCategories::where('saving_category_id', $id)->first();
             return response()->json([
                 'status' => true,
-                'message' => response($data)
+                'message' => 'Saving Categories Retrieved Successfully',
+                'data' => $data
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -64,7 +78,8 @@ class SavingCategoriesController extends Controller
             $data->save();
             return response()->json([
                 'status'  => true,
-                'message' => response($data)
+                'message' => 'Data berhasil diupdate',
+                'data' => $data
             ]);
             
         } catch (\Throwable $th) {
