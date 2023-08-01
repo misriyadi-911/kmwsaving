@@ -47,6 +47,7 @@ function resourceAdmin($router,$uri,$controller){
     $router->get($uri,$controller.'@index');
     $router->post($uri,$controller.'@store');
     $router->get($uri.'/{id}',$controller.'@show');
+    $router->get($uri.'/dashboard', $controller.'@dashboard');
     $router->put($uri.'/{id}',$controller.'@update');
 
     $router->patch($uri.'/{id}',$controller.'@update');
@@ -69,6 +70,7 @@ function resourcePilgrims($router,$uri,$controller){
     $router->get($uri,$controller.'@index');
     $router->post($uri,$controller.'@store');
     $router->get($uri.'/{id}',$controller.'@show');
+    $router->get($uri.'/dashboard/{id}', $controller.'@dashboard');
     $router->put($uri.'/{id}',$controller.'@update');
 
     $router->patch($uri.'/{id}',$controller.'@update');

@@ -23,6 +23,11 @@ class PilgrimsController extends Controller
         return response($data);
     }
 
+    public function dashboard ($id) 
+    {
+        
+    }
+
     /**
      * Show the form for creating a new resource.
      *
