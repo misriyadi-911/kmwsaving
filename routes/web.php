@@ -69,7 +69,7 @@ function resourceSaving($router, $uri, $controller)
 
 $router->group(['prefix' => 'saving-category'], function () use ($router) {
     $router->get('/', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'SavingCategoriesController@getMe']);
-    $router->post('/', ['middleware' => 'auth:' . implode(' ', Roles::$pilgrim), 'uses' => 'SavingCategoriesController@store']);
+    $router->post('/', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'SavingCategoriesController@store']);
     $router->get('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'SavingCategoriesController@show']);
     $router->put('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'SavingCategoriesController@update']);
     $router->delete('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'SavingCategoriesController@destroy']);
