@@ -41,6 +41,45 @@ class AdminController extends Controller
         }
     }
 
+    public function data_tabungan ()
+    {
+        // $exist = DB::select("SELECT kimias.*, ponds.name as pond_name FROM kimias INNER JOIN ponds ON kimias.pond_id = ponds.id WHERE kimias.id = $id");
+        try {
+            // $jml_saldo = Saldo::select('nominal', \DB::raw('SUM(nominal) as total_saldo'))->get();
+            $data_tabungan= Saldo::join('pilgrims', 'saldo.pilgrims_id', '=', 'pilgrims.pilgrims_id')
+            ->join('saving_categories', 'pilgrims.saving_category_id', '=', 'saving_categories.saving_category_id')->get();
+            return response()->json([
+                'status'  => true,
+                'message' => response($data_tabungan)
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
+
+    public function detail_tabungan ($id)
+    {
+        // $exist = DB::select("SELECT kimias.*, ponds.name as pond_name FROM kimias INNER JOIN ponds ON kimias.pond_id = ponds.id WHERE kimias.id = $id");
+        try {
+            // $jml_saldo = Saldo::select('nominal', \DB::raw('SUM(nominal) as total_saldo'))->get();
+            $data_tabungan= \DB::select("SELECT saldo.*, pilgrims.*, saving_categories.* FROM saldo 
+            INNER JOIN pilgrims ON saldo.pilgrims_id = pilgrims.pilgrims_id 
+            INNER JOIN saving_categories ON pilgrims.saving_category_id = saving_categories.saving_category_id WHERE pilgrims.pilgrims_id = '$id'");
+            return response()->json([
+                'status'  => true,
+                'message' => response($data_tabungan)
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
+
     public function store(Request $request)
     {
         try {
@@ -64,8 +103,18 @@ class AdminController extends Controller
 
     public function show($id)
     {
-        $data = Admin::where('employe_id', $id)->first();
-        return response($data);
+        try {
+            $data = Admin::where('employe_id', $id)->first();
+            return response()->json([
+                'status'  => true,
+                'message' => response($data)
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
     }
 
     public function update(Request $request, $id)

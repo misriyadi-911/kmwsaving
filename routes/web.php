@@ -47,13 +47,20 @@ function resourceAdmin($router,$uri,$controller){
     $router->get($uri,$controller.'@index');
     $router->post($uri,$controller.'@store');
     $router->get($uri.'/{id}',$controller.'@show');
-    $router->get($uri.'/dashboard', $controller.'@dashboard');
     $router->put($uri.'/{id}',$controller.'@update');
-
     $router->patch($uri.'/{id}',$controller.'@update');
     $router->delete($uri.'/{id}',$controller.'@destroy');
+    // $router->get($uri.'/dashboard', $controller.'@dashboard');
+    // $router->get($uri.'/data_tabungan', $controller.'@data_tabungan');
+    // $router->head($uri.'/detail_tabungan/{id}', $controller.'@detail_tabungan');
 }
 resourceAdmin($router,'user/admin','AdminController');
+
+function detail_tabungan($router,$uri,$controller){
+    $router->get($uri, $controller.'@data_tabungan');
+    $router->get($uri.'/{id}', $controller.'@detail_tabungan');
+}
+detail_tabungan($router,'admin/detail_tabungan','AdminController');
 
 function resourceSaving($router,$uri,$controller){
     $router->get($uri,$controller.'@index');
@@ -70,7 +77,7 @@ function resourcePilgrims($router,$uri,$controller){
     $router->get($uri,$controller.'@index');
     $router->post($uri,$controller.'@store');
     $router->get($uri.'/{id}',$controller.'@show');
-    $router->get($uri.'/dashboard/{id}', $controller.'@dashboard');
+    // $router->get($uri.'/dashboard', $controller.'@dashboard');
     $router->put($uri.'/{id}',$controller.'@update');
 
     $router->patch($uri.'/{id}',$controller.'@update');
