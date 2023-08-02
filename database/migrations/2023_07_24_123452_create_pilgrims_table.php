@@ -17,6 +17,7 @@ return new class extends Migration
             $table->bigInteger('user_account_id')->unsigned();
             $table->bigInteger('saving_category_id')->unsigned();
             $table->string('bank_name', 100);
+            $table->string('bank_account_name', 100);
             $table->string('no_rekening', 70);
             $table->string('nik', 20);
             $table->string('no_kk', 20);
