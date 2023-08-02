@@ -37,9 +37,9 @@ $router->group(['prefix' => 'users/'], function() use($router) {
     $router->delete('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'UserAccountController@destroy']);
 });
 
-$router->group(['prefix' => 'users/admin'], function () use($router) {
-    $router->get('/', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' 'AdminController@index']);
-});
+// $router->group(['prefix' => 'users/admin'], function () use($router) {
+//     $router->get('/', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@index']);
+// });
 //Table Admin
 function resourceAdmin($router,$uri,$controller){
     $router->get($uri,$controller.'@index');
@@ -49,16 +49,22 @@ function resourceAdmin($router,$uri,$controller){
     $router->patch($uri.'/{id}',$controller.'@update');
     $router->delete($uri.'/{id}',$controller.'@destroy');
     // $router->get($uri.'/dashboard', $controller.'@dashboard');
-    // $router->get($uri.'/data_tabungan', $controller.'@data_tabungan');
-    // $router->head($uri.'/detail_tabungan/{id}', $controller.'@detail_tabungan');
 }
 resourceAdmin($router,'user/admin','AdminController');
 
-function detail_tabungan($router,$uri,$controller){
-    $router->get($uri, $controller.'@data_tabungan');
-    $router->get($uri.'/{id}', $controller.'@detail_tabungan');
+function kelola_tabungan($router,$uri,$controller){
+    $router->get($uri.'/dashboard', $controller.'@dashboard');
+    $router->get($uri.'/tabungan', $controller.'@data_tabungan');
+    $router->get($uri.'/tabungan/{id}', $controller.'@detail_tabungan');
+    $router->post($uri.'/tabungan/{id}', $controller.'@setor_tabungan');
 }
-detail_tabungan($router,'admin/tabungan/detail','AdminController');
+kelola_tabungan($router,'admin','AdminController');
+
+function veirifikasi($router,$uri,$controller){
+    $router->get($uri, $controller.'@data_verifikasi');
+    $router->put($uri.'/{id}', $controller.'@ganti_verifikasi');
+}
+veirifikasi($router,'admin/verifikasi','AdminController');
 
 function resourceSaving($router,$uri,$controller){
     $router->get($uri,$controller.'@index');

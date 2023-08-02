@@ -80,6 +80,30 @@ class AdminController extends Controller
         }
     }
 
+    public function setor_tabungan (Request $request, $id)
+    {
+        try {
+            // $jml_saldo = Saldo::select('nominal', \DB::raw('SUM(nominal) as total_saldo'))->get();
+            $data_tabungan= \DB::select("SELECT saldo.nominal, pilgrims.bank_account_name, pilgrims.address, pilgrims.saving_category_id FROM saldo 
+            INNER JOIN pilgrims ON saldo.pilgrims_id = pilgrims.pilgrims_id 
+            WHERE pilgrims.pilgrims_id = '$id'");
+            $data = new TransactionalSavings();
+            $data->pilgrims_id = $id;
+            $data->nominal = $request->input('nominal');
+            $data->type = $request->input('type');
+            $data->save();
+            return response()->json([
+                'status'  => true,
+                'message' => response($data)
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
+
     public function store(Request $request)
     {
         try {
