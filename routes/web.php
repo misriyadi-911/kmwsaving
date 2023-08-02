@@ -29,19 +29,13 @@ $router->group(['prefix' => 'auth'], function () use ($router) {
     $router->get('/me', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'AuthController@getMe']);
 });
 
-
-//Table User Account
-function resourceUsers($router, $uri, $controller)
-{
-    $router->get($uri, $controller . '@index');
-    $router->post($uri, $controller . '@store');
-    $router->get($uri . '/{id}', $controller . '@show');
-    $router->post($uri . '/{id}', $controller . '@update');
-
-    $router->patch($uri . '/{id}', $controller . '@update');
-    $router->delete($uri . '/{id}', $controller . '@destroy');
-}
-resourceUsers($router, 'users', 'UserAccountController');
+$router->group(['prefix' => 'users/jamaah'], function() use($router) {
+    $router->get('/', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'UserAccountController@index']);
+    $router->post('/', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'UserAccountController@store']);
+    $router->get('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'UserAccountController@show']);
+    $router->put('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'UserAccountController@update']);
+    $router->delete('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'UserAccountController@destroy']);
+});
 
 //Table Admin
 function resourceAdmin($router, $uri, $controller)
@@ -64,17 +58,14 @@ $router->group(['prefix' => 'saving-categories'], function () use ($router) {
     $router->delete('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'SavingCategoriesController@destroy']);
 });
 
-function resourcePilgrims($router, $uri, $controller)
-{
-    $router->get($uri, $controller . '@index');
-    $router->post($uri, $controller . '@store');
-    $router->get($uri . '/{id}', $controller . '@show');
-    $router->put($uri . '/{id}', $controller . '@update');
 
-    $router->patch($uri . '/{id}', $controller . '@update');
-    $router->delete($uri . '/{id}', $controller . '@destroy');
-}
-resourcePilgrims($router, 'pilgrims', 'PilgrimsController');
+$router->group(['prefix' => 'pilgrims'], function () use ($router) {
+    $router->get('/', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'PilgrimsController@index']);
+    $router->post('/', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'PilgrimsController@store']);
+    $router->get('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'PilgrimsController@show']);
+    $router->put('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'PilgrimsController@update']);
+    $router->delete('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'PilgrimsController@destroy']);
+});
 
 function resourceTransactional($router, $uri, $controller)
 {
@@ -112,17 +103,11 @@ function resourceSaldo($router, $uri, $controller)
 }
 resourceSaldo($router, 'saldo', 'SaldoController');
 
-function resourceFiles($router, $uri, $controller)
-{
-    $router->get($uri, $controller . '@index');
-    $router->post($uri, $controller . '@store');
-    $router->get($uri . '/{id}', $controller . '@show');
-    $router->put($uri . '/{id}', $controller . '@update');
 
-    $router->patch($uri . '/{id}', $controller . '@update');
-    $router->delete($uri . '/{id}', $controller . '@destroy');
-}
-resourceFiles($router, 'files', 'FilesController');
+$router->group(['prefix' => 'files'], function () use ($router) {
+    $router->get('/', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'FilesController@index']);
+    $router->post('/', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'FilesController@store']);
+});
 
 function resourceInfo($router, $uri, $controller)
 {

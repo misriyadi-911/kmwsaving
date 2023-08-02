@@ -19,8 +19,21 @@ class PilgrimsController extends Controller
      */
     public function index()
     {
-        $data = Pilgrims::All();
-        return response($data);
+        $request = request()->all();
+        $page = isset($request['page']) ? $request['page'] : 1;
+        $request['limit'] = isset($request['limit']) ? $request['limit'] : 10;
+        $offset = ($page - 1) * $request['limit'];
+        $data = Pilgrims::offset($offset)->limit($request['limit'])->get();
+        return response()->json([
+            'status' => true,
+            'message' => 'Saving Categories Retrieved Successfully',
+            'data' => [
+                'totalPage' => ceil(Pilgrims::count() / $request['limit']),
+                'totalRows' => Pilgrims::count(),
+                'pageNumber' => $page,
+                'data' => $data,
+            ]
+        ]);
     }
 
     /**
