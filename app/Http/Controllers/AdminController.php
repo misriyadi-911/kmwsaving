@@ -6,6 +6,7 @@ use App\Models\Admin;
 use App\Models\Pilgrims;
 use App\Models\Saldo;
 use App\Models\TransactionalSavings;
+use App\Models\DepartureInformation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\FacadesDB;
@@ -193,6 +194,25 @@ class AdminController extends Controller
             $data_pemberangkatan = Saldo::join('pilgrims', 'saldo.pilgrims_id', '=', 'pilgrims.pilgrims_id')
             ->join('saving_categories', 'pilgrims.saving_category_id', '=', 'saving_categories.saving_category_id')
             ->get();
+            return response()->json([
+                'status'  => true,
+                'message' => response($data_pemberangkatan)
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
+
+    public function input_pemberangkatan (Request $request, $id) 
+    {
+        try {
+            $data_pemberangkatan = new DepartureInformation();
+            $data_pemberangkatan->pilgrims_id = $id;
+            $data_pemberangkatan->time = $request->input('time');
+            $data_pemberangkatan->save();
             return response()->json([
                 'status'  => true,
                 'message' => response($data_pemberangkatan)

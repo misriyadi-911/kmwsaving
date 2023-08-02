@@ -68,8 +68,7 @@ veirifikasi($router,'admin/verifikasi','AdminController');
 
 function pemberangkatan($router,$uri,$controller){
     $router->get($uri, $controller.'@data_pemberangkatan');
-    $router->get($uri. '/gambar/{id}', $controller.'@lihat_gambar');
-    $router->put($uri.'/{id}', $controller.'@ganti_verifikasi');
+    $router->post($uri. '/input/{id}', $controller.'@input_pemberangkatan');
 }
 pemberangkatan($router,'admin/pemberangkatan','AdminController');
 
