@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('email');
             $table->string('password', 100);
             $table->enum('type', array('admin', 'pengguna', 'jamaah'));
-            $table->string('thumbnail');
+            $table->string('thumbnail')->nullable();
             $table->timestamps();
         });
     }

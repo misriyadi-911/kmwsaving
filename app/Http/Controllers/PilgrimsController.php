@@ -19,8 +19,23 @@ class PilgrimsController extends Controller
      */
     public function index()
     {
-        $data = Pilgrims::All();
-        return response($data);
+        $request = request()->all();
+        $page = isset($request['page']) ? $request['page'] : 1;
+        $request['limit'] = isset($request['limit']) ? $request['limit'] : 10;
+        $offset = ($page - 1) * $request['limit'];
+        $data = Pilgrims::join('user_account', 'pilgrims.user_account_id', '=', 'user_account.user_account_id')
+        ->join('saving_categories', 'pilgrims.saving_category_id', '=', 'saving_categories.saving_category_id')
+        ->offset($offset)->limit($request['limit'])->get();
+        return response()->json([
+            'status' => true,
+            'message' => 'Saving Categories Retrieved Successfully',
+            'data' => [
+                'totalPage' => ceil(Pilgrims::count() / $request['limit']),
+                'totalRows' => Pilgrims::count(),
+                'pageNumber' => $page,
+                'data' => $data,
+            ]
+        ]);
     }
 
     public function dashboard ($id) 
@@ -49,14 +64,17 @@ class PilgrimsController extends Controller
         try {
             $data = new Pilgrims();
             $data->user_account_id = $request->input('user_account_id');
+            $data->kode = 'PILGRIMS-'. $request->input('user_account_id');
             $data->saving_category_id = $request->input('saving_category_id');
             $data->bank_name = $request->input('bank_name');
             $data->no_rekening = $request->input('no_rekening');
             $data->nik = $request->input('nik');
             $data->no_kk = $request->input('no_kk');
+            $data->bank_account_name = $request->input('bank_account_name');
             $data->gender = $request->input('gender');
             $data->phone = $request->input('phone');
             $data->address = $request->input('address');
+            $data->birth_date = $request->input('birth_day');
             $data->save();
             return response()->json([
                 'status'  => true,
@@ -80,10 +98,14 @@ class PilgrimsController extends Controller
     public function show($id)
     {
         try {
-            $data = Pilgrims::where('pilgrims_id',$id)->get();
+            $data = Pilgrims::join('user_account', 'pilgrims.user_account_id', '=', 'user_account.user_account_id')
+            ->join('saving_categories', 'pilgrims.saving_category_id', '=', 'saving_categories.saving_category_id')
+            ->where('user_account.user_account_id', $id)->first();
+            
             return response()->json([
                 'status'  => true,
-                'message' => response($data)
+                'message' => 'Pilgrims Retrieved Successfully',
+                'data' => $data
             ]);
             
         } catch (\Throwable $th) {
@@ -123,8 +145,10 @@ class PilgrimsController extends Controller
             $data->nik = $request->input('nik');
             $data->no_kk = $request->input('no_kk');
             $data->gender = $request->input('gender');
+            $data->bank_account_name = $request->input('bank_account_name');
             $data->phone = $request->input('phone');
             $data->address = $request->input('address');
+            $data->birth_date = $request->input('birth_day');
             $data->save();
             return response()->json([
                 'status'  => true,

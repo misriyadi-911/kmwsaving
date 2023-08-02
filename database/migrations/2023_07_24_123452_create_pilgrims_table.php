@@ -13,12 +13,15 @@ return new class extends Migration
     {
         Schema::create('pilgrims', function (Blueprint $table) {
             $table->id('pilgrims_id');
+            $table->string('kode', 100);
             $table->bigInteger('user_account_id')->unsigned();
             $table->bigInteger('saving_category_id')->unsigned();
             $table->string('bank_name', 100);
+            $table->string('bank_account_name', 100);
             $table->string('no_rekening', 70);
-            $table->string('nik', 15);
-            $table->string('no_kk', 15);
+            $table->string('nik', 20);
+            $table->string('no_kk', 20);
+            $table->date('birth_date');
             $table->enum('gender', array('laki-laki', 'perempuan'));
             $table->string('phone', 13);
             $table->text('address');

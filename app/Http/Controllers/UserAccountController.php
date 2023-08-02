@@ -30,14 +30,29 @@ class UserAccountController extends Controller
         try {
             $data = new UserAccount();
             $data->username = $request->input('username');
+
+            $exist = UserAccount::where('username', $data->username)->first();
+            if($exist){
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Username sudah digunakan'
+                ], 500);
+            }
+
             $data->email = $request->input('email');
-            $data->password = $request->input('password');
-            $data->type = $request->input('type');
-            $data->thumbnail = $request->input('thumbnail');
+            $data->password = app('hash')->make($request->input('password'));
+            $data->type = $request->input('type') ? $request->input('type') : 'jamaah';
+            if ($request->file('thumbnail')) {
+                $file = $request->file('thumbnail');
+                $filename = time() . '.' . $file->getClientOriginalExtension();
+                $file->move('uploads/users/', $filename);
+                $data->thumbnail = '/uploads/users/' . $filename;
+            }
             $data->save();
             return response()->json([
                 'status'  => true,
-                'message' => response($data)
+                'message' => 'Data berhasil ditambahkan',
+                'data' => $data
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -54,7 +69,8 @@ class UserAccountController extends Controller
             $data = UserAccount::where('user_account_id', $id)->get();
             return response()->json([
                 'status'  => true,
-                'message' => response($data)
+                'message' => 'Data berhasil ditampilkan',
+                'data' => $data
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -73,13 +89,16 @@ class UserAccountController extends Controller
             $data->password = $request->input('password') ? $request->input('password') : $data->password;
             $data->type = $request->input('type') ? $request->input('type') : $data->type;
             if ($request->file('thumbnail')) {
-                if ($data->thumbnail && file_exists('uploads/users/' . $data->thumbnail)) {
-                    unlink('uploads/users/' . $data->thumbnail);
+                $exist = $data->thumbnail;
+                if ($exist) {
+                    if(file_exists($exist)){
+                        unlink($exist);
+                    }
                 }
                 $file = $request->file('thumbnail');
                 $filename = time() . '.' . $file->getClientOriginalExtension();
                 $request->file('thumbnail')->move('uploads/users/', $filename);
-                $data->thumbnail = '/uploads/users/' . $filename;
+                $data->thumbnail = 'uploads/users/' . $filename;
             }
             $data->save();
             return response()->json([

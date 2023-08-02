@@ -20,7 +20,7 @@ return new class extends Migration
         });
 
         Schema::table('files', function (Blueprint $table) {
-            $table->foreign('user_id')->references('pilgrims_id')->on('pilgrims')
+            $table->foreign('user_id')->references('user_account_id')->on('user_account')
             ->onDelete('cascade')->onUpdate('cascade');
         });
     }
