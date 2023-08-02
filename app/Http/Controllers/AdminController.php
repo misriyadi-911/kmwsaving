@@ -104,6 +104,82 @@ class AdminController extends Controller
         }
     }
 
+    public function data_verifikasi () 
+    {
+        try {
+            // $jml_saldo = Saldo::select('nominal', \DB::raw('SUM(nominal) as total_saldo'))->get();
+            $data_tabungan= TransactionalSavings::join('pilgrims', 'transactional_savings.pilgrims_id', '=', 'pilgrims.pilgrims_id')
+            ->join('user_account', 'pilgrims.user_account_id', '=', 'user_account.user_account_id')
+            ->get();
+            return response()->json([
+                'status'  => true,
+                'message' => response($data_tabungan)
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
+
+    public function lihat_gambar ($id) 
+    {
+        try {
+            $data_tabungan= TransactionalSavings::join('pilgrims', 'transactional_savings.pilgrims_id', '=', 'pilgrims.pilgrims_id')
+            ->join('user_account', 'pilgrims.user_account_id', '=', 'user_account.user_account_id')
+            ->where('pilgrims.pilgrims_id', '=', $id)
+            ->get();
+            return response()->json([
+                'status'  => true,
+                'message' => response($data_tabungan)
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
+
+    public function ganti_verifikasi (Request $request, $id) 
+    {
+        try {
+            $data_tabungan= TransactionalSavings::join('pilgrims', 'transactional_savings.pilgrims_id', '=', 'pilgrims.pilgrims_id')
+            ->where('pilgrims.pilgrims_id', '=', $id)
+            ->first();
+            $data_tabungan->type = 'diverifikasi';
+            $data_tabungan->save();
+            return response()->json([
+                'status'  => true,
+                'message' => response($data_tabungan)
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
+
+    public function data_pemberangkatan () 
+    {
+        try {
+            $data_pemberangkatan = Saldo::join('pilgrims', 'saldo.pilgrims_id', '=', 'pilgrims.pilgrims_id')
+            ->join('saving_categories', 'pilgrims.saving_category_id', '=', 'saving_categories.saving_category_id')
+            ->get();
+            return response()->json([
+                'status'  => true,
+                'message' => response($data_pemberangkatan)
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
+
     public function store(Request $request)
     {
         try {

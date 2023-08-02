@@ -62,9 +62,17 @@ kelola_tabungan($router,'admin','AdminController');
 
 function veirifikasi($router,$uri,$controller){
     $router->get($uri, $controller.'@data_verifikasi');
+    $router->get($uri. '/gambar/{id}', $controller.'@lihat_gambar');
     $router->put($uri.'/{id}', $controller.'@ganti_verifikasi');
 }
 veirifikasi($router,'admin/verifikasi','AdminController');
+
+function pemberangkatan($router,$uri,$controller){
+    $router->get($uri, $controller.'@data_pemberangkatan');
+    $router->get($uri. '/gambar/{id}', $controller.'@lihat_gambar');
+    $router->put($uri.'/{id}', $controller.'@ganti_verifikasi');
+}
+pemberangkatan($router,'admin/pemberangkatan','AdminController');
 
 function resourceSaving($router,$uri,$controller){
     $router->get($uri,$controller.'@index');
