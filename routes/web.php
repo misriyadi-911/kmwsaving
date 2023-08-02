@@ -52,13 +52,12 @@ function resourceAdmin($router,$uri,$controller){
 }
 resourceAdmin($router,'user/admin','AdminController');
 
-function kelola_tabungan($router,$uri,$controller){
-    $router->get($uri.'/dashboard', $controller.'@dashboard');
-    $router->get($uri.'/tabungan', $controller.'@data_tabungan');
-    $router->get($uri.'/tabungan/{id}', $controller.'@detail_tabungan');
-    $router->post($uri.'/tabungan/{id}', $controller.'@setor_tabungan');
-}
-kelola_tabungan($router,'admin','AdminController');
+$router->group(['prefix' => 'admin'], function () use ($router) {
+    $router->get('/dashboard', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@dashboard']);
+    $router->get('/tabungan', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@data_tabungan']);
+    $router->get('/tabungan/{id}', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@detail_tabungan']);
+    $router->post('/tabungan/{id}', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@setor_tabungan']);
+});
 
 function veirifikasi($router,$uri,$controller){
     $router->get($uri, $controller.'@data_verifikasi');

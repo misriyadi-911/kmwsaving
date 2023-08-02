@@ -7,6 +7,8 @@ use App\Models\Pilgrims;
 use App\Models\Saldo;
 use App\Models\TransactionalSavings;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\FacadesDB;
 
 class AdminController extends Controller
 {
@@ -22,16 +24,21 @@ class AdminController extends Controller
         return response($data);
     }
 
-    public function dashboard ()
+    public function dashboard()
     {
         try {
-            // $jml_saldo = Saldo::select('nominal', \DB::raw('SUM(nominal) as total_saldo'))->get();
-            $total_saldo = \DB::select("SELECT SUM(saldo.nominal) AS total FROM saldo");
-            $jml_jamaah  = \DB::select("SELECT COUNT(pilgrims.pilgrims_id) AS jml_jamaah FROM pilgrims");
-            $jml_verified = \DB::select("SELECT COUNT(transactional_savings.type) AS terverfikasi FROM transactional_savings WHERE transactional_savings.type='diverifikasi'");
+            // $jml_saldo = Saldo::select('nominal', DB::raw('SUM(nominal) as total_saldo'))->get();
+            $total_saldo = DB::select("SELECT SUM(saldo.nominal) AS total FROM saldo")[0];
+            $jml_jamaah  = DB::select("SELECT COUNT(pilgrims.pilgrims_id) AS jml_jamaah FROM pilgrims")[0];
+            $jml_verified = DB::select("SELECT COUNT(transactional_savings.type) AS terverfikasi FROM transactional_savings WHERE transactional_savings.type='belum'")[0];
             return response()->json([
                 'status'  => true,
-                'message' => response([$total_saldo, $jml_jamaah, $jml_verified])
+                'message' => 'Data retieved successfully',
+                'data' => [
+                    'total' => $total_saldo->total ? $total_saldo->total : 0,
+                    'total_pilgrims' => $jml_jamaah->jml_jamaah,
+                    'not_verified' => $jml_verified->terverfikasi,
+                ]
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -41,16 +48,26 @@ class AdminController extends Controller
         }
     }
 
-    public function data_tabungan ()
+    public function data_tabungan()
     {
-        // $exist = DB::select("SELECT kimias.*, ponds.name as pond_name FROM kimias INNER JOIN ponds ON kimias.pond_id = ponds.id WHERE kimias.id = $id");
         try {
-            // $jml_saldo = Saldo::select('nominal', \DB::raw('SUM(nominal) as total_saldo'))->get();
-            $data_tabungan= Saldo::join('pilgrims', 'saldo.pilgrims_id', '=', 'pilgrims.pilgrims_id')
-            ->join('saving_categories', 'pilgrims.saving_category_id', '=', 'saving_categories.saving_category_id')->get();
+            $request = request()->all();
+            $page = isset($request['page']) ? $request['page'] : 1;
+            $request['limit'] = isset($request['limit']) ? $request['limit'] : 10;
+            $offset = ($page - 1) * $request['limit'];
+            $data = Saldo::join('pilgrims', 'saldo.pilgrims_id', '=', 'pilgrims.pilgrims_id')
+            ->join('user_account', 'user_account.user_account_id', '=', 'pilgrims.user_account_id')
+                ->join('saving_categories', 'pilgrims.saving_category_id', '=', 'saving_categories.saving_category_id')->offset($offset)->limit($request['limit'])->get();
+
             return response()->json([
                 'status'  => true,
-                'message' => response($data_tabungan)
+                'message' => 'Data retieved successfully',
+                'data' => [
+                    'totalPage' => ceil(Saldo::count() / $request['limit']),
+                    'totalRows' => Saldo::count(),
+                    'pageNumber' => $page,
+                    'data' => $data,
+                ]
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -60,17 +77,17 @@ class AdminController extends Controller
         }
     }
 
-    public function detail_tabungan ($id)
+    public function detail_tabungan($id)
     {
-        // $exist = DB::select("SELECT kimias.*, ponds.name as pond_name FROM kimias INNER JOIN ponds ON kimias.pond_id = ponds.id WHERE kimias.id = $id");
         try {
-            // $jml_saldo = Saldo::select('nominal', \DB::raw('SUM(nominal) as total_saldo'))->get();
-            $data_tabungan= \DB::select("SELECT saldo.*, pilgrims.*, saving_categories.* FROM saldo 
-            INNER JOIN pilgrims ON saldo.pilgrims_id = pilgrims.pilgrims_id 
-            INNER JOIN saving_categories ON pilgrims.saving_category_id = saving_categories.saving_category_id WHERE pilgrims.pilgrims_id = '$id'");
+            $data_tabungan = DB::select("SELECT saldo.*, pilgrims.*, saving_categories.*, user_account.* FROM saldo 
+             JOIN pilgrims ON saldo.pilgrims_id = pilgrims.pilgrims_id 
+             JOIN user_account ON pilgrims.user_account_id = user_account.user_account_id
+             JOIN saving_categories ON pilgrims.saving_category_id = saving_categories.saving_category_id WHERE pilgrims.pilgrims_id = '$id'");
             return response()->json([
                 'status'  => true,
-                'message' => response($data_tabungan)
+                'message' => 'Data retieved successfully',
+                'data' => $data_tabungan[0]
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -80,21 +97,29 @@ class AdminController extends Controller
         }
     }
 
-    public function setor_tabungan (Request $request, $id)
+    public function setor_tabungan(Request $request, $id)
     {
         try {
-            // $jml_saldo = Saldo::select('nominal', \DB::raw('SUM(nominal) as total_saldo'))->get();
-            $data_tabungan= \DB::select("SELECT saldo.nominal, pilgrims.bank_account_name, pilgrims.address, pilgrims.saving_category_id FROM saldo 
+            $data_tabungan = DB::select("SELECT saldo.saldo_id, saldo.nominal, pilgrims.bank_account_name, pilgrims.address, pilgrims.saving_category_id FROM saldo 
             INNER JOIN pilgrims ON saldo.pilgrims_id = pilgrims.pilgrims_id 
             WHERE pilgrims.pilgrims_id = '$id'");
+
             $data = new TransactionalSavings();
             $data->pilgrims_id = $id;
             $data->nominal = $request->input('nominal');
-            $data->type = $request->input('type');
+            $data->type = $request->input('type') ? 'belum' : 'diverifikasi';
             $data->save();
+
+            if($data->type == 'diverifikasi') {
+                $saldo = Saldo::find($data_tabungan[0]->saldo_id);
+                $saldo->nominal = $data_tabungan[0]->nominal + $data->nominal;
+                $saldo->save();
+            }
+
             return response()->json([
                 'status'  => true,
-                'message' => response($data)
+                'message' => 'Setor tabungan berhasil',
+                'data' => $data
             ]);
         } catch (\Throwable $th) {
             return response()->json([
