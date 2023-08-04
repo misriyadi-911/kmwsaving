@@ -110,6 +110,27 @@ class PilgrimsController extends Controller
         }
     }
 
+    public function setoranAwal($id) {
+        try {
+            $data = TransactionalSavings::create([
+                'pilgrims_id' => Pilgrims::where('user_account_id', $id)->first()->pilgrims_id,
+                'nominal' => request()->input('nominal'),
+                'type' => 'belum',
+                'file_id' => request()->input('file_id')
+            ]);
+            return response()->json([
+                'status' => true,
+                'message' => 'Saldo Retrieved Successfully',
+                'data' => $data
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
+
     /**
      * Show the form for creating a new resource.
      *

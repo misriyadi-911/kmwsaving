@@ -31,7 +31,7 @@ $router->group(['prefix' => 'auth'], function () use ($router) {
 
 $router->group(['prefix' => 'users/'], function () use ($router) {
     $router->get('/', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'UserAccountController@index']);
-    $router->post('/', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'UserAccountController@store']);
+    $router->post('/', 'UserAccountController@store');
     $router->get('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'UserAccountController@show']);
     $router->post('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'UserAccountController@update']);
     $router->delete('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'UserAccountController@destroy']);
@@ -66,7 +66,7 @@ $router->group(['prefix' => 'user/admin'], function () use ($router) {
 });
 
 $router->group(['prefix' => 'saving-categories'], function () use ($router) {
-    $router->get('/', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'SavingCategoriesController@index']);
+    $router->get('/', 'SavingCategoriesController@index');
     $router->post('/', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'SavingCategoriesController@store']);
     $router->get('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'SavingCategoriesController@show']);
     $router->put('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'SavingCategoriesController@update']);
@@ -75,7 +75,7 @@ $router->group(['prefix' => 'saving-categories'], function () use ($router) {
 
 $router->group(['prefix' => 'pilgrims'], function () use ($router) {
     $router->get('/', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'PilgrimsController@index']);
-    $router->post('/', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'PilgrimsController@store']);
+    $router->post('/', 'PilgrimsController@store');
     $router->get('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'PilgrimsController@show']);
     $router->put('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'PilgrimsController@update']);
     $router->delete('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'PilgrimsController@destroy']);
@@ -109,7 +109,7 @@ $router->group(['prefix' => 'saldo'], function () use ($router) {
 
 $router->group(['prefix' => 'files'], function () use ($router) {
     $router->get('/', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'FilesController@index']);
-    $router->post('/', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'FilesController@store']);
+    $router->post('/', 'FilesController@store');
 });
 
 $router->group(['prefix' => 'informations'], function () use ($router) {
@@ -141,3 +141,5 @@ $router->group(['prefix' => '/jamaah'], function () use ($router) {
     $router->post('/information', ['middleware' => 'auth:' . Roles::$pilgrim, 'uses' => 'PilgrimsController@setor']);
     $router->get('/saldo', ['middleware' => 'auth:' . Roles::$pilgrim, 'uses' => 'PilgrimsController@saldo']);
 });
+
+$router->post('/setoran-awal/{id}', 'PilgrimsController@setoranAwal');
