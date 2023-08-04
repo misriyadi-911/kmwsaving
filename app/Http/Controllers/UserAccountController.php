@@ -86,7 +86,9 @@ class UserAccountController extends Controller
             $data = UserAccount::where('user_account_id', $id)->first();
             $data->username = $request->input('username') ? $request->input('username') : $data->username;
             $data->email = $request->input('email') ? $request->input('email') : $data->email;
-            $data->password = $request->input('password') ? $request->input('password') : $data->password;
+            if($request->input('password')){
+                $data->password = $data->password == $request->input('password') ? $data->password : app('hash')->make($request->input('password'));
+            }
             $data->type = $request->input('type') ? $request->input('type') : $data->type;
             if ($request->file('thumbnail')) {
                 $exist = $data->thumbnail;

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->bigInteger('pilgrims_id')->unsigned();
             $table->bigInteger('nominal');
             $table->enum('type', array('diverifikasi', 'belum', 'ditolak'))->default('belum');
-            $table->string('comment')->nullable();
+            $table->longText('comment')->nullable();
             $table->timestamps();
         });
 
