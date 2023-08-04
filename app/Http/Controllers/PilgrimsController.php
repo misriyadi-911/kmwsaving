@@ -53,9 +53,9 @@ class PilgrimsController extends Controller
                 'status' => true,
                 'message' => 'Dashboard Retrieved Successfully',
                 'data' => [
-                    'category' => $category->name,
-                    'saldo' => $saldo->nominal,
-                    'deposit_avg' => $deposit_avg
+                    'category' => $category ? $category->name : '',
+                    'saldo' => $saldo ? $saldo->nominal : 0,
+                    'deposit_avg' => $deposit_avg ? $deposit_avg : 0
                 ]
             ]);
         } catch (\Throwable $th) {
@@ -75,8 +75,8 @@ class PilgrimsController extends Controller
                 'status' => true,
                 'message' => 'Saldo Retrieved Successfully',
                 'data' => [
-                    'kategori' => $saldo->name,
-                    'saldo' => $saldo->nominal
+                    'kategori' => $saldo ? $saldo->name : '',
+                    'saldo' => $saldo ? $saldo->nominal : 0
                 ]
             ]);
         } catch (\Throwable $th) {
@@ -118,18 +118,18 @@ class PilgrimsController extends Controller
     public function keberangkatan()
     {
         try {
-            $tgl_daftar = Pilgrims::where('user_account_id', auth()->user()->user_account_id)->first()->created_at;
-            $tgl_berangkat = DepartureInformation::join('pilgrims', 'departure_informations.pilgrims_id', '=', 'pilgrims.pilgrims_id')->where('pilgrims.user_account_id', auth()->user()->user_account_id)->first()->time;
-            $tgl_lunas = Saldo::where('pilgrims_id', Pilgrims::where('user_account_id', auth()->user()->user_account_id)->first()->pilgrims_id)->first()->created_at;
+            $tgl_daftar = Pilgrims::where('user_account_id', auth()->user()->user_account_id)->first();
+            $tgl_berangkat = DepartureInformation::join('pilgrims', 'departure_informations.pilgrims_id', '=', 'pilgrims.pilgrims_id')->where('pilgrims.user_account_id', auth()->user()->user_account_id)->first();
+            $tgl_lunas = Saldo::where('pilgrims_id', Pilgrims::where('user_account_id', auth()->user()->user_account_id)->first()->pilgrims_id)->first();
             return response()->json([
                 'status' => true,
                 'message' => 'Keberangkatan Retrieved Successfully',
                 'data' => [
-                    'tgl_daftar' => $tgl_daftar,
-                    'tgl_berangkat' => $tgl_berangkat,
-                    'tgl_lunas' => $tgl_lunas,
+                    'tgl_daftar' => $tgl_daftar ? $tgl_daftar->created_at : null,
+                    'tgl_berangkat' => $tgl_berangkat ? $tgl_berangkat->time : null,
+                    'tgl_lunas' => $tgl_lunas ? $tgl_lunas->updated_at : null
                 ]
-                ]);
+            ]);
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => false,
@@ -220,18 +220,18 @@ class PilgrimsController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            $data = Pilgrims::where('pilgrims_id', $id)->first();
-            $data->user_account_id = $request->input('user_account_id');
-            $data->saving_category_id = $request->input('saving_category_id');
-            $data->bank_name = $request->input('bank_name');
-            $data->no_rekening = $request->input('no_rekening');
-            $data->nik = $request->input('nik');
-            $data->no_kk = $request->input('no_kk');
-            $data->gender = $request->input('gender');
-            $data->bank_account_name = $request->input('bank_account_name');
-            $data->phone = $request->input('phone');
-            $data->address = $request->input('address');
-            $data->birth_date = $request->input('birth_day');
+            $data = Pilgrims::join('user_account', 'pilgrims.user_account_id', '=', 'user_account.user_account_id')
+                ->join('saving_categories', 'pilgrims.saving_category_id', '=', 'saving_categories.saving_category_id')
+                ->where('user_account.user_account_id', $id)->first();
+            $data->bank_name = $request->input('bank_name') ? $request->input('bank_name') : $data->bank_name;
+            $data->no_rekening = $request->input('no_rekening') ? $request->input('no_rekening') : $data->no_rekening;
+            $data->nik = $request->input('nik') ? $request->input('nik') : $data->nik;
+            $data->no_kk = $request->input('no_kk') ? $request->input('no_kk') : $data->no_kk;
+            $data->gender = $request->input('gender') ? $request->input('gender') : $data->gender;
+            $data->bank_account_name = $request->input('bank_account_name') ? $request->input('bank_account_name') : $data->bank_account_name;
+            $data->phone = $request->input('phone') ? $request->input('phone') : $data->phone;
+            $data->address = $request->input('address') ? $request->input('address') : $data->address;
+            $data->birth_date = $request->input('birth_day') ? $request->input('birth_day') : $data->birth_date;
             $data->save();
             return response()->json([
                 'status'  => true,
