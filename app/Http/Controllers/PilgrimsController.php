@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DepartureInformation;
 use App\Models\Pilgrims;
+use App\Models\Saldo;
+use App\Models\TransactionalSavings;
 use Illuminate\Http\Request;
 
 class PilgrimsController extends Controller
 {
     protected $pilgrim;
-    
-    public function __construct(Pilgrims $pilgrim) {
+
+    public function __construct(Pilgrims $pilgrim)
+    {
         $this->pilgrim = $pilgrim;
     }
     /**
@@ -24,8 +28,8 @@ class PilgrimsController extends Controller
         $request['limit'] = isset($request['limit']) ? $request['limit'] : 10;
         $offset = ($page - 1) * $request['limit'];
         $data = Pilgrims::join('user_account', 'pilgrims.user_account_id', '=', 'user_account.user_account_id')
-        ->join('saving_categories', 'pilgrims.saving_category_id', '=', 'saving_categories.saving_category_id')
-        ->offset($offset)->limit($request['limit'])->get();
+            ->join('saving_categories', 'pilgrims.saving_category_id', '=', 'saving_categories.saving_category_id')
+            ->offset($offset)->limit($request['limit'])->get();
         return response()->json([
             'status' => true,
             'message' => 'Saving Categories Retrieved Successfully',
@@ -38,9 +42,93 @@ class PilgrimsController extends Controller
         ]);
     }
 
-    public function dashboard ($id) 
+    public function dashboard()
     {
-        
+        try {
+            $id = auth()->user()->user_account_id;
+            $category = Pilgrims::join('saving_categories', 'pilgrims.saving_category_id', '=', 'saving_categories.saving_category_id')->where('pilgrims.user_account_id', $id)->first();
+            $saldo = Saldo::join('pilgrims', 'saldo.pilgrims_id', '=', 'pilgrims.pilgrims_id')->join('user_account', 'pilgrims.user_account_id', '=', 'user_account.user_account_id')->where('user_account.user_account_id', $id)->first();
+            $deposit_avg = Pilgrims::join('transactional_savings', 'pilgrims.pilgrims_id', '=', 'transactional_savings.pilgrims_id')->where('pilgrims.user_account_id', $id)->avg('transactional_savings.nominal');
+            return response()->json([
+                'status' => true,
+                'message' => 'Dashboard Retrieved Successfully',
+                'data' => [
+                    'category' => $category ? $category->name : '',
+                    'saldo' => $saldo ? $saldo->nominal : 0,
+                    'deposit_avg' => $deposit_avg ? $deposit_avg : 0
+                ]
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ]);
+        }
+    }
+
+    public function saldo()
+    {
+        try {
+            $id = auth()->user()->user_account_id;
+            $saldo = Saldo::join('pilgrims', 'saldo.pilgrims_id', '=', 'pilgrims.pilgrims_id')->join('user_account', 'pilgrims.user_account_id', '=', 'user_account.user_account_id')->join('saving_categories', 'pilgrims.saving_category_id', '=', 'saving_categories.saving_category_id')->where('user_account.user_account_id', $id)->first();
+            return response()->json([
+                'status' => true,
+                'message' => 'Saldo Retrieved Successfully',
+                'data' => [
+                    'kategori' => $saldo ? $saldo->name : '',
+                    'saldo' => $saldo ? $saldo->nominal : 0
+                ]
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ]);
+        }
+    }
+
+    public function setor()
+    {
+        try {
+            $id = auth()->user()->user_account_id;
+            $data = TransactionalSavings::create([
+                'pilgrims_id' => Pilgrims::where('user_account_id', $id)->first()->pilgrims_id,
+                'nominal' => request()->input('nominal'),
+                'type' => 'belum',
+                'file_id' => request()->input('file_id')
+            ]);
+            return response()->json([
+                'status' => true,
+                'message' => 'Saldo Retrieved Successfully',
+                'data' => $data
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
+
+    public function setoranAwal($id) {
+        try {
+            $data = TransactionalSavings::create([
+                'pilgrims_id' => Pilgrims::where('user_account_id', $id)->first()->pilgrims_id,
+                'nominal' => request()->input('nominal'),
+                'type' => 'belum',
+                'file_id' => request()->input('file_id')
+            ]);
+            return response()->json([
+                'status' => true,
+                'message' => 'Saldo Retrieved Successfully',
+                'data' => $data
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -48,9 +136,27 @@ class PilgrimsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
+    public function keberangkatan()
     {
-        //
+        try {
+            $tgl_daftar = Pilgrims::where('user_account_id', auth()->user()->user_account_id)->first();
+            $tgl_berangkat = DepartureInformation::join('pilgrims', 'departure_informations.pilgrims_id', '=', 'pilgrims.pilgrims_id')->where('pilgrims.user_account_id', auth()->user()->user_account_id)->first();
+            $tgl_lunas = Saldo::where('pilgrims_id', Pilgrims::where('user_account_id', auth()->user()->user_account_id)->first()->pilgrims_id)->first();
+            return response()->json([
+                'status' => true,
+                'message' => 'Keberangkatan Retrieved Successfully',
+                'data' => [
+                    'tgl_daftar' => $tgl_daftar ? $tgl_daftar->created_at : null,
+                    'tgl_berangkat' => $tgl_berangkat ? $tgl_berangkat->time : null,
+                    'tgl_lunas' => $tgl_lunas ? $tgl_lunas->updated_at : null
+                ]
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -64,7 +170,7 @@ class PilgrimsController extends Controller
         try {
             $data = new Pilgrims();
             $data->user_account_id = $request->input('user_account_id');
-            $data->kode = 'PILGRIMS-'. $request->input('user_account_id');
+            $data->kode = 'PILGRIMS-' . $request->input('user_account_id');
             $data->saving_category_id = $request->input('saving_category_id');
             $data->bank_name = $request->input('bank_name');
             $data->no_rekening = $request->input('no_rekening');
@@ -80,7 +186,6 @@ class PilgrimsController extends Controller
                 'status'  => true,
                 'message' => response($data)
             ]);
-            
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => false,
@@ -99,15 +204,14 @@ class PilgrimsController extends Controller
     {
         try {
             $data = Pilgrims::join('user_account', 'pilgrims.user_account_id', '=', 'user_account.user_account_id')
-            ->join('saving_categories', 'pilgrims.saving_category_id', '=', 'saving_categories.saving_category_id')
-            ->where('user_account.user_account_id', $id)->first();
-            
+                ->join('saving_categories', 'pilgrims.saving_category_id', '=', 'saving_categories.saving_category_id')
+                ->where('user_account.user_account_id', $id)->first();
+
             return response()->json([
                 'status'  => true,
                 'message' => 'Pilgrims Retrieved Successfully',
                 'data' => $data
             ]);
-            
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => false,
@@ -137,24 +241,23 @@ class PilgrimsController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            $data = Pilgrims::where('pilgrims_id', $id)->first();
-            $data->user_account_id = $request->input('user_account_id');
-            $data->saving_category_id = $request->input('saving_category_id');
-            $data->bank_name = $request->input('bank_name');
-            $data->no_rekening = $request->input('no_rekening');
-            $data->nik = $request->input('nik');
-            $data->no_kk = $request->input('no_kk');
-            $data->gender = $request->input('gender');
-            $data->bank_account_name = $request->input('bank_account_name');
-            $data->phone = $request->input('phone');
-            $data->address = $request->input('address');
-            $data->birth_date = $request->input('birth_day');
+            $data = Pilgrims::join('user_account', 'pilgrims.user_account_id', '=', 'user_account.user_account_id')
+                ->join('saving_categories', 'pilgrims.saving_category_id', '=', 'saving_categories.saving_category_id')
+                ->where('user_account.user_account_id', $id)->first();
+            $data->bank_name = $request->input('bank_name') ? $request->input('bank_name') : $data->bank_name;
+            $data->no_rekening = $request->input('no_rekening') ? $request->input('no_rekening') : $data->no_rekening;
+            $data->nik = $request->input('nik') ? $request->input('nik') : $data->nik;
+            $data->no_kk = $request->input('no_kk') ? $request->input('no_kk') : $data->no_kk;
+            $data->gender = $request->input('gender') ? $request->input('gender') : $data->gender;
+            $data->bank_account_name = $request->input('bank_account_name') ? $request->input('bank_account_name') : $data->bank_account_name;
+            $data->phone = $request->input('phone') ? $request->input('phone') : $data->phone;
+            $data->address = $request->input('address') ? $request->input('address') : $data->address;
+            $data->birth_date = $request->input('birth_day') ? $request->input('birth_day') : $data->birth_date;
             $data->save();
             return response()->json([
                 'status'  => true,
                 'message' => response($data)
             ]);
-            
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => false,
@@ -172,13 +275,12 @@ class PilgrimsController extends Controller
     public function destroy($id)
     {
         try {
-            $data = Pilgrims::where('pilgrims_id',$id)->first();
+            $data = Pilgrims::where('pilgrims_id', $id)->first();
             $data->delete();
             return response()->json([
                 'status'  => true,
                 'message' => 'Data Berhasil Dihapus'
             ]);
-            
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => false,

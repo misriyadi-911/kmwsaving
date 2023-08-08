@@ -7,7 +7,8 @@ use Illuminate\Http\Request;
 
 class TransactionalSavingsController extends Controller
 {
-    public function __construct(\App\Models\TransactionalSavings $transactional) {
+    private $transactional;
+    public function __construct(TransactionalSavings $transactional) {
         $this->transactional = $transactional;
     }
     /**

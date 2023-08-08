@@ -29,62 +29,44 @@ $router->group(['prefix' => 'auth'], function () use ($router) {
     $router->get('/me', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'AuthController@getMe']);
 });
 
-$router->group(['prefix' => 'users/'], function() use($router) {
+$router->group(['prefix' => 'users/'], function () use ($router) {
     $router->get('/', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'UserAccountController@index']);
-    $router->post('/', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'UserAccountController@store']);
+    $router->post('/', 'UserAccountController@store');
     $router->get('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'UserAccountController@show']);
     $router->post('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'UserAccountController@update']);
     $router->delete('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'UserAccountController@destroy']);
 });
 
-// $router->group(['prefix' => 'users/admin'], function () use($router) {
-//     $router->get('/', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@index']);
-// });
-//Table Admin
-function resourceAdmin($router,$uri,$controller){
-    $router->get($uri,$controller.'@index');
-    $router->post($uri,$controller.'@store');
-    $router->get($uri.'/{id}',$controller.'@show');
-    $router->put($uri.'/{id}',$controller.'@update');
-    $router->patch($uri.'/{id}',$controller.'@update');
-    $router->delete($uri.'/{id}',$controller.'@destroy');
-    // $router->get($uri.'/dashboard', $controller.'@dashboard');
-}
-resourceAdmin($router,'user/admin','AdminController');
 
 $router->group(['prefix' => 'admin'], function () use ($router) {
     $router->get('/dashboard', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@dashboard']);
     $router->get('/tabungan', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@data_tabungan']);
     $router->get('/tabungan/{id}', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@detail_tabungan']);
-    $router->post('/tabungan/{id}', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@store_tabungan']);
+    $router->post('/tabungan/{id}', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@setor_tabungan']);
 });
 
-function veirifikasi($router,$uri,$controller){
-    $router->get($uri, $controller.'@data_verifikasi');
-    $router->get($uri. '/gambar/{id}', $controller.'@lihat_gambar');
-    $router->put($uri.'/{id}', $controller.'@ganti_verifikasi');
-}
-veirifikasi($router,'admin/verifikasi','AdminController');
 
-function pemberangkatan($router,$uri,$controller){
-    $router->get($uri, $controller.'@data_pemberangkatan');
-    $router->post($uri. '/input/{id}', $controller.'@input_pemberangkatan');
-}
-pemberangkatan($router,'admin/pemberangkatan','AdminController');
+$router->group(['prefix' => 'admin/verifikasi'], function () use ($router) {
+    $router->get('/', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@data_verifikasi']);
+    $router->get('/gambar/{id}', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@lihat_gambar']);
+    $router->put('/{id}', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@ganti_verifikasi']);
+});
 
-function resourceSaving($router,$uri,$controller){
-    $router->get($uri,$controller.'@index');
-    $router->post($uri,$controller.'@store');
-    $router->get($uri.'/{id}',$controller.'@show');
-    $router->put($uri.'/{id}',$controller.'@update');
+$router->group(['prefix' => 'admin/departure'], function () use ($router) {
+    $router->get('/', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@data_pemberangkatan']);
+    $router->put('/', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@input_pemberangkatan']);
+});
 
-    $router->patch($uri.'/{id}',$controller.'@update');
-    $router->delete($uri.'/{id}',$controller.'@destroy');
-}
-resourceAdmin($router, 'user/admin', 'AdminController');
+$router->group(['prefix' => 'user/admin'], function () use ($router) {
+    $router->get('/', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@index']);
+    $router->post('/', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@store']);
+    $router->get('/{id}', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@show']);
+    $router->put('/{id}', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@update']);
+    $router->delete('/{id}', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@destroy']);
+});
 
 $router->group(['prefix' => 'saving-categories'], function () use ($router) {
-    $router->get('/', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'SavingCategoriesController@index']);
+    $router->get('/', 'SavingCategoriesController@index');
     $router->post('/', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'SavingCategoriesController@store']);
     $router->get('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'SavingCategoriesController@show']);
     $router->put('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'SavingCategoriesController@update']);
@@ -93,82 +75,71 @@ $router->group(['prefix' => 'saving-categories'], function () use ($router) {
 
 $router->group(['prefix' => 'pilgrims'], function () use ($router) {
     $router->get('/', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'PilgrimsController@index']);
-    $router->post('/', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'PilgrimsController@store']);
+    $router->post('/', 'PilgrimsController@store');
     $router->get('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'PilgrimsController@show']);
     $router->put('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'PilgrimsController@update']);
     $router->delete('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'PilgrimsController@destroy']);
 });
 
 
-function resourceTransactional($router, $uri, $controller)
-{
-    $router->get($uri, $controller . '@index');
-    $router->post($uri, $controller . '@store');
-    $router->get($uri . '/{id}', $controller . '@show');
-    $router->put($uri . '/{id}', $controller . '@update');
+$router->group(['prefix' => 'transactional-savings'], function () use ($router) {
+    $router->get('/', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'TransactionalSavingsController@index']);
+    $router->post('/', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'TransactionalSavingsController@store']);
+    $router->get('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'TransactionalSavingsController@show']);
+    $router->put('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'TransactionalSavingsController@update']);
+    $router->delete('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'TransactionalSavingsController@destroy']);
+});
 
-    $router->patch($uri . '/{id}', $controller . '@update');
-    $router->delete($uri . '/{id}', $controller . '@destroy');
-}
-resourceTransactional($router, 'transaction', 'TransactionalSavingsController');
+$router->group(['prefix' => 'departure-info'], function () use ($router) {
+    $router->get('/', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'DepartureInformationsController@index']);
+    $router->post('/', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'DepartureInformationsController@store']);
+    $router->get('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'DepartureInformationsController@show']);
+    $router->put('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'DepartureInformationsController@update']);
+    $router->delete('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'DepartureInformationsController@destroy']);
+});
 
-function resourceDeparture($router, $uri, $controller)
-{
-    $router->get($uri, $controller . '@index');
-    $router->post($uri, $controller . '@store');
-    $router->get($uri . '/{id}', $controller . '@show');
-    $router->put($uri . '/{id}', $controller . '@update');
-
-    $router->patch($uri . '/{id}', $controller . '@update');
-    $router->delete($uri . '/{id}', $controller . '@destroy');
-}
-resourceDeparture($router, 'departureinfo', 'DepartureInformationsController');
-
-function resourceSaldo($router, $uri, $controller)
-{
-    $router->get($uri, $controller . '@index');
-    $router->post($uri, $controller . '@store');
-    $router->get($uri . '/{id}', $controller . '@show');
-    $router->put($uri . '/{id}', $controller . '@update');
-
-    $router->patch($uri . '/{id}', $controller . '@update');
-    $router->delete($uri . '/{id}', $controller . '@destroy');
-}
-resourceSaldo($router, 'saldo', 'SaldoController');
+$router->group(['prefix' => 'saldo'], function () use ($router) {
+    $router->get('/', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'SaldoController@index']);
+    $router->post('/', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'SaldoController@store']);
+    $router->get('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'SaldoController@show']);
+    $router->put('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'SaldoController@update']);
+    $router->delete('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'SaldoController@destroy']);
+});
 
 
 $router->group(['prefix' => 'files'], function () use ($router) {
     $router->get('/', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'FilesController@index']);
-    $router->post('/', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'FilesController@store']);
+    $router->post('/', 'FilesController@store');
 });
 
-function resourceInfo($router, $uri, $controller)
-{
-    $router->get($uri, $controller . '@index');
-    $router->post($uri, $controller . '@store');
-    $router->get($uri . '/{id}', $controller . '@show');
-    $router->put($uri . '/{id}', $controller . '@update');
+$router->group(['prefix' => 'informations'], function () use ($router) {
+    $router->get('/', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'InformationsController@index']);
+    $router->post('/', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'InformationsController@store']);
+    $router->get('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'InformationsController@show']);
+    $router->put('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'InformationsController@update']);
+    $router->delete('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'InformationsController@destroy']);
+});
 
-    $router->patch($uri . '/{id}', $controller . '@update');
-    $router->delete($uri . '/{id}', $controller . '@destroy');
-}
-resourceInfo($router, 'informations', 'InformationsController');
+$router->group(['prefix' => 'galleries'], function () use ($router) {
+    $router->get('/', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'GalleriesController@index']);
+    $router->post('/', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'GalleriesController@store']);
+    $router->get('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'GalleriesController@show']);
+    $router->put('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'GalleriesController@update']);
+    $router->delete('/{id}', ['middleware' => 'auth:' . implode(' ', Roles::$ALL), 'uses' => 'GalleriesController@destroy']);
+});
 
-function resourceGalleries($router, $uri, $controller)
-{
-    $router->get($uri, $controller . '@index');
-    $router->post($uri, $controller . '@store');
-    $router->get($uri . '/{id}', $controller . '@show');
-    $router->put($uri . '/{id}', $controller . '@update');
-    $router->patch($uri . '/{id}', $controller . '@update');
-    $router->delete($uri . '/{id}', $controller . '@destroy');
-}
-resourceGalleries($router, 'galleries', 'GalleriesController');
+$router->group(['prefix' => 'report'], function () use ($router) {
+    $router->get('/', 'ReportController@index');
+    $router->get('/print', 'ReportController@print');
+    $router->get('/export', 'ReportController@export');
+});
 
-function Notification($router, $uri, $controller)
-{
-    $router->get($uri, $controller . '@index');
-    $router->post($uri, $controller . '@store');
-    $router->get($uri . '/{id}', $controller . '@show');
-}
-Notification($router, 'notification', 'NotificationController');
+
+$router->group(['prefix' => '/jamaah'], function () use ($router) {
+    $router->get('/information/departure', ['middleware' => 'auth:' . Roles::$pilgrim, 'uses' => 'PilgrimsController@keberangkatan']);
+    $router->get('/information', ['middleware' => 'auth:' . Roles::$pilgrim, 'uses' => 'PilgrimsController@dashboard']);
+    $router->post('/information', ['middleware' => 'auth:' . Roles::$pilgrim, 'uses' => 'PilgrimsController@setor']);
+    $router->get('/saldo', ['middleware' => 'auth:' . Roles::$pilgrim, 'uses' => 'PilgrimsController@saldo']);
+});
+
+$router->post('/setoran-awal/{id}', 'PilgrimsController@setoranAwal');

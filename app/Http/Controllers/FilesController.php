@@ -44,7 +44,8 @@ class FilesController extends Controller
 
             return response()->json([
                 'status'  => true,
-                'message' => response($data)
+                'message' => 'Data berhasil disimpan',
+                'data'    => $data
             ]);
         } catch (\Throwable $th) {
             return response()->json([

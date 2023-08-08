@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id('transactional_savings_id');
             $table->bigInteger('pilgrims_id')->unsigned();
             $table->bigInteger('nominal');
-            $table->enum('type', array('diverifikasi', 'belum'));
+            $table->enum('type', array('diverifikasi', 'belum', 'ditolak'))->default('belum');
+            $table->longText('comment')->nullable();
             $table->timestamps();
         });
 

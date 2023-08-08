@@ -57,15 +57,15 @@ class AdminController extends Controller
             $request['limit'] = isset($request['limit']) ? $request['limit'] : 10;
             $offset = ($page - 1) * $request['limit'];
             $data = Saldo::join('pilgrims', 'saldo.pilgrims_id', '=', 'pilgrims.pilgrims_id')
-            ->join('user_account', 'user_account.user_account_id', '=', 'pilgrims.user_account_id')
+                ->join('user_account', 'user_account.user_account_id', '=', 'pilgrims.user_account_id')
                 ->join('saving_categories', 'pilgrims.saving_category_id', '=', 'saving_categories.saving_category_id')->offset($offset)->limit($request['limit'])->get();
 
             return response()->json([
                 'status'  => true,
                 'message' => 'Data retieved successfully',
                 'data' => [
-                    'totalPage' => ceil(Saldo::count() / $request['limit']),
-                    'totalRows' => Saldo::count(),
+                    'totalPage' => ceil($data->count() / $request['limit']),
+                    'totalRows' => $data->count(),
                     'pageNumber' => $page,
                     'data' => $data,
                 ]
@@ -111,7 +111,7 @@ class AdminController extends Controller
             $data->type = $request->input('type') ? 'belum' : 'diverifikasi';
             $data->save();
 
-            if($data->type == 'diverifikasi') {
+            if ($data->type == 'diverifikasi') {
                 $saldo = Saldo::find($data_tabungan[0]->saldo_id);
                 $saldo->nominal = $data_tabungan[0]->nominal + $data->nominal;
                 $saldo->save();
@@ -130,16 +130,28 @@ class AdminController extends Controller
         }
     }
 
-    public function data_verifikasi () 
+    public function data_verifikasi()
     {
         try {
-            // $jml_saldo = Saldo::select('nominal', \DB::raw('SUM(nominal) as total_saldo'))->get();
-            $data_tabungan= TransactionalSavings::join('pilgrims', 'transactional_savings.pilgrims_id', '=', 'pilgrims.pilgrims_id')
-            ->join('user_account', 'pilgrims.user_account_id', '=', 'user_account.user_account_id')
-            ->get();
+            $request = request()->all();
+            $page = isset($request['page']) ? $request['page'] : 1;
+            $limit = isset($request['limit']) ? $request['limit'] : 10;
+            $offset = ($page - 1) * $limit;
+
+            $data_tabungan = TransactionalSavings::join('pilgrims', 'transactional_savings.pilgrims_id', '=', 'pilgrims.pilgrims_id')
+                ->join('user_account', 'pilgrims.user_account_id', '=', 'user_account.user_account_id')
+                ->where('transactional_savings.type', 'belum')
+                ->offset($offset)->limit($limit)->get();
+
             return response()->json([
                 'status'  => true,
-                'message' => response($data_tabungan)
+                'message' => 'Data retieved successfully',
+                'data' => [
+                    'totalPage' => ceil($data_tabungan->count() / $limit),
+                    'totalRows' => $data_tabungan->count(),
+                    'pageNumber' => $page,
+                    'data' => $data_tabungan,
+                ]
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -149,16 +161,24 @@ class AdminController extends Controller
         }
     }
 
-    public function lihat_gambar ($id) 
+    public function lihat_gambar($id)
     {
         try {
-            $data_tabungan= TransactionalSavings::join('pilgrims', 'transactional_savings.pilgrims_id', '=', 'pilgrims.pilgrims_id')
-            ->join('user_account', 'pilgrims.user_account_id', '=', 'user_account.user_account_id')
-            ->where('pilgrims.pilgrims_id', '=', $id)
-            ->get();
+            $data_tabungan = TransactionalSavings::join('pilgrims', 'transactional_savings.pilgrims_id', '=', 'pilgrims.pilgrims_id')
+                ->join('user_account', 'pilgrims.user_account_id', '=', 'user_account.user_account_id')
+                ->join('files', 'transactional_savings.file_id', '=', 'files.file_id')
+                ->where('pilgrims.pilgrims_id', '=', $id)
+                ->get();
+            if ($data_tabungan[0]) {
+                return response()->json([
+                    'status'  => true,
+                    'message' => 'Data retrieved successfully',
+                    'data' => $data_tabungan[0]
+                ]);
+            }
             return response()->json([
-                'status'  => true,
-                'message' => response($data_tabungan)
+                'status'  => false,
+                'message' => 'Data not found',
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -168,17 +188,37 @@ class AdminController extends Controller
         }
     }
 
-    public function ganti_verifikasi (Request $request, $id) 
+    public function ganti_verifikasi(Request $request, $id)
     {
         try {
-            $data_tabungan= TransactionalSavings::join('pilgrims', 'transactional_savings.pilgrims_id', '=', 'pilgrims.pilgrims_id')
-            ->where('pilgrims.pilgrims_id', '=', $id)
-            ->first();
-            $data_tabungan->type = 'diverifikasi';
+            $data_tabungan = TransactionalSavings::join('pilgrims', 'transactional_savings.pilgrims_id', '=', 'pilgrims.pilgrims_id')
+                ->where('pilgrims.pilgrims_id', '=', $id)
+                ->first();
+
+            $data_tabungan->type = $request->input('type');
+
+            if ($request->type == 'diverifikasi') {
+                $exist = Saldo::where('pilgrims_id', $data_tabungan->pilgrims_id)->first();
+                if ($exist) {
+                    $exist->nominal = $exist->nominal + $data_tabungan->nominal;
+                    $exist->save();
+                } else {
+                    Saldo::create([
+                        'pilgrims_id' => $data_tabungan->pilgrims_id,
+                        'nominal' => $data_tabungan->nominal
+                    ]);
+                }
+            }
+
+            if ($request->input('comment')) {
+                $data_tabungan->comment = $request->input('comment');
+            }
             $data_tabungan->save();
+
             return response()->json([
                 'status'  => true,
-                'message' => response($data_tabungan)
+                'message' => 'Sukses mengubah status',
+                'data' => $data_tabungan
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -188,15 +228,31 @@ class AdminController extends Controller
         }
     }
 
-    public function data_pemberangkatan () 
+    public function data_pemberangkatan()
     {
         try {
-            $data_pemberangkatan = Saldo::join('pilgrims', 'saldo.pilgrims_id', '=', 'pilgrims.pilgrims_id')
-            ->join('saving_categories', 'pilgrims.saving_category_id', '=', 'saving_categories.saving_category_id')
-            ->get();
+            $request = request()->all();
+            $page = isset($request['page']) ? $request['page'] : 1;
+            $limit = isset($request['limit']) ? $request['limit'] : 10;
+            $offset = ($page - 1) * $limit;
+
+            $data = Saldo::join('pilgrims', 'saldo.pilgrims_id', '=', 'pilgrims.pilgrims_id')
+                ->join('saving_categories', 'pilgrims.saving_category_id', '=', 'saving_categories.saving_category_id')
+                ->join('user_account', 'pilgrims.user_account_id', '=', 'user_account.user_account_id')
+                ->leftjoin('departure_informations', 'pilgrims.pilgrims_id', '=', 'departure_informations.pilgrims_id')
+                ->select('pilgrims.created_at as tanggal_mendaftar', 'saldo.updated_at as tanggal_lunas', 'pilgrims.kode as kode', 'user_account.username as nama', 'saving_categories.name as kategori', 'pilgrims.address as alamat', 'pilgrims.pilgrims_id as id', 'departure_informations.time as waktu_keberangkatan')
+                ->where('saldo.nominal', '>=', DB::raw('saving_categories.limit'))
+                ->offset($offset)->limit($limit)->get();
+
             return response()->json([
                 'status'  => true,
-                'message' => response($data_pemberangkatan)
+                'message' => 'Data retieved successfully',
+                'data' => [
+                    'totalPage' => ceil($data->count() / $limit),
+                    'totalRows' => $data->count(),
+                    'pageNumber' => $page,
+                    'data' => $data,
+                ]
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -206,16 +262,23 @@ class AdminController extends Controller
         }
     }
 
-    public function input_pemberangkatan (Request $request, $id) 
+    public function input_pemberangkatan(Request $request)
     {
         try {
-            $data_pemberangkatan = new DepartureInformation();
-            $data_pemberangkatan->pilgrims_id = $id;
-            $data_pemberangkatan->time = $request->input('time');
-            $data_pemberangkatan->save();
+            $exist = DepartureInformation::where('pilgrims_id', $request->input('id'))->first();
+
+            if ($exist) {
+                $exist->time = $request->input('time');
+                $exist->save();
+            } else {
+                $data_pemberangkatan = new DepartureInformation();
+                $data_pemberangkatan->pilgrims_id = $request->input('id');
+                $data_pemberangkatan->time = $request->input('time');
+                $data_pemberangkatan->save();
+            }
             return response()->json([
                 'status'  => true,
-                'message' => response($data_pemberangkatan)
+                'message' => 'Sukses mengubah status'
             ]);
         } catch (\Throwable $th) {
             return response()->json([
