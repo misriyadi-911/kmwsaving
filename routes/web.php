@@ -57,6 +57,7 @@ $router->group(['prefix' => 'admin'], function () use ($router) {
     $router->get('/tabungan', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@data_tabungan']);
     $router->get('/tabungan/{id}', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@detail_tabungan']);
     $router->post('/tabungan/{id}', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@store_tabungan']);
+});
 
 function veirifikasi($router,$uri,$controller){
     $router->get($uri, $controller.'@data_verifikasi');
@@ -159,8 +160,15 @@ function resourceGalleries($router, $uri, $controller)
     $router->post($uri, $controller . '@store');
     $router->get($uri . '/{id}', $controller . '@show');
     $router->put($uri . '/{id}', $controller . '@update');
-
     $router->patch($uri . '/{id}', $controller . '@update');
     $router->delete($uri . '/{id}', $controller . '@destroy');
 }
 resourceGalleries($router, 'galleries', 'GalleriesController');
+
+function Notification($router, $uri, $controller)
+{
+    $router->get($uri, $controller . '@index');
+    $router->post($uri, $controller . '@store');
+    $router->get($uri . '/{id}', $controller . '@show');
+}
+Notification($router, 'notification', 'NotificationController');
