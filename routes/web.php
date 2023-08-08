@@ -143,3 +143,9 @@ $router->group(['prefix' => '/jamaah'], function () use ($router) {
 });
 
 $router->post('/setoran-awal/{id}', 'PilgrimsController@setoranAwal');
+
+$router->group(['prefix' => '/notification'], function () use ($router) {
+    $router->get('/', ['uses' => 'NotificationController@index']);
+    $router->post('/', ['uses' => 'NotificationController@store']);
+    $router->get('/{id}', ['uses' => 'NotificationController@show']);
+});

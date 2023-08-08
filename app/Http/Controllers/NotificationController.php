@@ -60,6 +60,7 @@ class NotificationController extends Controller
         try {
             $data = Notification::where('notification_id', $id)->first();
             $data->status = 'read';
+            $data->message = 'Pembayaran selesai';
             $data->save();
             return response()->json([
                 'status' => true,
@@ -76,23 +77,23 @@ class NotificationController extends Controller
 
     public function update(Request $request, $id)
     {
-        try {
-            $data = SavingCategories::where('saving_category_id', $id)->first();
-            $data->name = $request->input('name');
-            $data->limit = $request->input('limit');
-            $data->save();
-            return response()->json([
-                'status'  => true,
-                'message' => 'Data berhasil diupdate',
-                'data' => $data
-            ]);
+        // try {
+        //     $data = SavingCategories::where('saving_category_id', $id)->first();
+        //     $data->name = $request->input('name');
+        //     $data->limit = $request->input('limit');
+        //     $data->save();
+        //     return response()->json([
+        //         'status'  => true,
+        //         'message' => 'Data berhasil diupdate',
+        //         'data' => $data
+        //     ]);
             
-        } catch (\Throwable $th) {
-            return response()->json([
-                'status' => false,
-                'message' => $th->getMessage()
-            ], 500);
-        }
+        // } catch (\Throwable $th) {
+        //     return response()->json([
+        //         'status' => false,
+        //         'message' => $th->getMessage()
+        //     ], 500);
+        // }
     }
 }
 
