@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\DepartureInformation;
+use App\Models\Notification;
 use App\Models\Pilgrims;
 use App\Models\Saldo;
 use App\Models\TransactionalSavings;
+use App\Models\UserAccount;
 use Illuminate\Http\Request;
 
 class PilgrimsController extends Controller
@@ -27,16 +29,23 @@ class PilgrimsController extends Controller
         $page = isset($request['page']) ? $request['page'] : 1;
         $request['limit'] = isset($request['limit']) ? $request['limit'] : 10;
         $offset = ($page - 1) * $request['limit'];
+        $search = isset($request['search']) ? $request['search'] : '';
         $data = Pilgrims::join('user_account', 'pilgrims.user_account_id', '=', 'user_account.user_account_id')
-            ->join('saving_categories', 'pilgrims.saving_category_id', '=', 'saving_categories.saving_category_id')
-            ->offset($offset)->limit($request['limit'])->get();
+            ->join('saving_categories', 'pilgrims.saving_category_id', '=', 'saving_categories.saving_category_id');
+        if ($search) {
+            $data = $data->where('user_account.username', 'like', '%' . $search . '%')
+                ->orWhere('kode', 'like', '%' . $search . '%')
+                ->orWhere('saving_categories.name', 'like', '%'. $search . '%')
+                ->orWhere('address', 'like', '%' . $search . '%');
+        }
+       $data = $data->offset($offset)->limit($request['limit'])->get();
         return response()->json([
             'status' => true,
             'message' => 'Saving Categories Retrieved Successfully',
             'data' => [
                 'totalPage' => ceil(Pilgrims::count() / $request['limit']),
                 'totalRows' => Pilgrims::count(),
-                'pageNumber' => $page,
+                'pageNumber' => intval($page),
                 'data' => $data,
             ]
         ]);
@@ -97,6 +106,14 @@ class PilgrimsController extends Controller
                 'type' => 'belum',
                 'file_id' => request()->input('file_id')
             ]);
+            $isAdmin = UserAccount::where('type', 'admin')->get();
+            foreach ($isAdmin as $key => $value) {
+                Notification::create([
+                    'user_account_id' => $value->user_account_id,
+                    'transactional_savings_id' => $data->transactional_savings_id,
+                    'message' => 'Pengajuan Setoran Baru',
+                ]);
+            }
             return response()->json([
                 'status' => true,
                 'message' => 'Saldo Retrieved Successfully',
@@ -110,7 +127,8 @@ class PilgrimsController extends Controller
         }
     }
 
-    public function setoranAwal($id) {
+    public function setoranAwal($id)
+    {
         try {
             $data = TransactionalSavings::create([
                 'pilgrims_id' => Pilgrims::where('user_account_id', $id)->first()->pilgrims_id,
@@ -169,8 +187,15 @@ class PilgrimsController extends Controller
     {
         try {
             $data = new Pilgrims();
+            $exist = Pilgrims::where('nik', $request->input('nik'))->first();
+            if($exist){
+                return response()->json([
+                    'status' => false,
+                    'message' => 'NIK sudah digunakan'
+                ], 500);
+            }
             $data->user_account_id = $request->input('user_account_id');
-            $data->kode = 'PILGRIMS-' . $request->input('user_account_id');
+            $data->kode = date('Ym') . '00' . $request->input('saving_category_id') . $request->input('user_account_id');
             $data->saving_category_id = $request->input('saving_category_id');
             $data->bank_name = $request->input('bank_name');
             $data->no_rekening = $request->input('no_rekening');
@@ -220,24 +245,6 @@ class PilgrimsController extends Controller
         }
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, $id)
     {
         try {

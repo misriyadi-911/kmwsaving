@@ -70,7 +70,7 @@ class ReportController extends Controller
         'data' => [
           'totalPage' => ceil($data->count() / $limit),
           'totalRows' => $data->count(),
-          'pageNumber' => $page,
+          'pageNumber' => intval($page),
           'data' => $data,
         ]
       ]);

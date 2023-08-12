@@ -58,7 +58,16 @@ class AdminController extends Controller
             $offset = ($page - 1) * $request['limit'];
             $data = Saldo::join('pilgrims', 'saldo.pilgrims_id', '=', 'pilgrims.pilgrims_id')
                 ->join('user_account', 'user_account.user_account_id', '=', 'pilgrims.user_account_id')
-                ->join('saving_categories', 'pilgrims.saving_category_id', '=', 'saving_categories.saving_category_id')->offset($offset)->limit($request['limit'])->get();
+                ->join('saving_categories', 'pilgrims.saving_category_id', '=', 'saving_categories.saving_category_id');
+                if(isset($request['search'])) {
+                    $data = $data->orWhere('pilgrims.kode', 'like', '%' .$request['search']. '%')
+                    ->orWhere('user_account.username', 'like', '%' .$request['search']. '%')
+                    ->orWhere('saving_categories.name', 'like', '%' .$request['search']. '%')
+                    ->orWhere('pilgrims.address', 'like', '%' .$request['search']. '%')
+                    ->orWhere('saldo.nominal', 'like', '%' .$request['search']. '%');
+                }
+
+            $data = $data->offset($offset)->limit($request['limit'])->get();
 
             return response()->json([
                 'status'  => true,
@@ -66,7 +75,7 @@ class AdminController extends Controller
                 'data' => [
                     'totalPage' => ceil($data->count() / $request['limit']),
                     'totalRows' => $data->count(),
-                    'pageNumber' => $page,
+                    'pageNumber' => intval($page),
                     'data' => $data,
                 ]
             ]);
@@ -140,8 +149,17 @@ class AdminController extends Controller
 
             $data_tabungan = TransactionalSavings::join('pilgrims', 'transactional_savings.pilgrims_id', '=', 'pilgrims.pilgrims_id')
                 ->join('user_account', 'pilgrims.user_account_id', '=', 'user_account.user_account_id')
-                ->where('transactional_savings.type', 'belum')
-                ->offset($offset)->limit($limit)->get();
+                ->where('transactional_savings.type', 'belum');
+
+            if (isset($request['search'])) {
+                $data_tabungan = $data_tabungan
+                ->orWhere('pilgrims.kode', 'like', '%' .$request['search']. '%')
+                ->orWhere('user_account.username', 'like', '%' .$request['search']. '%')
+                ->orWhere('transactional_savings.nominal', 'like', '%' .$request['search']. '%');
+            }
+
+            $data_tabungan = $data_tabungan->offset($offset)->limit($limit)->get();
+            
 
             return response()->json([
                 'status'  => true,
@@ -149,7 +167,7 @@ class AdminController extends Controller
                 'data' => [
                     'totalPage' => ceil($data_tabungan->count() / $limit),
                     'totalRows' => $data_tabungan->count(),
-                    'pageNumber' => $page,
+                    'pageNumber' => intval($page),
                     'data' => $data_tabungan,
                 ]
             ]);
@@ -241,16 +259,23 @@ class AdminController extends Controller
                 ->join('user_account', 'pilgrims.user_account_id', '=', 'user_account.user_account_id')
                 ->leftjoin('departure_informations', 'pilgrims.pilgrims_id', '=', 'departure_informations.pilgrims_id')
                 ->select('pilgrims.created_at as tanggal_mendaftar', 'saldo.updated_at as tanggal_lunas', 'pilgrims.kode as kode', 'user_account.username as nama', 'saving_categories.name as kategori', 'pilgrims.address as alamat', 'pilgrims.pilgrims_id as id', 'departure_informations.time as waktu_keberangkatan')
-                ->where('saldo.nominal', '>=', DB::raw('saving_categories.limit'))
-                ->offset($offset)->limit($limit)->get();
-
+                ->where('saldo.nominal', '>=', DB::raw('saving_categories.limit'));
+            if (isset($request['search'])) {
+                $data = $data->where('pilgrims.kode', 'like', '%' . $request['search'] . '%')
+                    ->orWhere('user_account.username', 'like', '%' . $request['search'] . '%')
+                    ->orWhere('saving_categories.name', 'like', '%' . $request['search'] . '%')
+                    ->orWhere('pilgrims.address', 'like', '%' . $request['search'] . '%')
+                    ->orWhere('departure_informations.time', 'like', '%' . $request['search'] . '%')
+                    ->orWhere('saldo.nominal', 'like', '%' . $request['search'] . '%');
+            }
+            $data = $data->offset($offset)->limit($limit)->get();
             return response()->json([
                 'status'  => true,
                 'message' => 'Data retieved successfully',
                 'data' => [
                     'totalPage' => ceil($data->count() / $limit),
                     'totalRows' => $data->count(),
-                    'pageNumber' => $page,
+                    'pageNumber' => intval($page),
                     'data' => $data,
                 ]
             ]);

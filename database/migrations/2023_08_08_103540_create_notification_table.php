@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('notification', function (Blueprint $table) {
             $table->id('notification_id');
-            $table->bigInteger('pilgrims_id')->unsigned();
-            $table->biginteger('transactional_savings_id')->unsigned();
+            $table->foreignId('user_account_id')->references('user_account_id')->on('user_account')->cascadeOnDelete()->cascadeOnUpdate();
+            $table->foreignId('transactional_savings_id')->references('transactional_savings_id')->on('transactional_savings')->cascadeOnDelete()->cascadeOnUpdate();
             $table->string('message', 255);
             $table->enum ('status', ['read', 'unread'])->default('unread');
             $table->timestamps();

@@ -8,7 +8,8 @@ use Illuminate\Http\Request;
 class SavingCategoriesController extends Controller
 {
     protected $saving;
-    public function __construct(SavingCategories $saving) {
+    public function __construct(SavingCategories $saving)
+    {
         $this->saving = $saving;
     }
 
@@ -18,14 +19,21 @@ class SavingCategoriesController extends Controller
         $page = isset($request['page']) ? $request['page'] : 1;
         $request['limit'] = isset($request['limit']) ? $request['limit'] : 10;
         $offset = ($page - 1) * $request['limit'];
-        $data = SavingCategories::offset($offset)->limit($request['limit'])->get();
+        $search = isset($request['search']) ? $request['search'] : null;
+        if ($search) {
+            $data = SavingCategories::where('name', 'like', '%' . $request['search'] . '%')
+                ->orWhere('limit', 'like', '%' . $request['search'] . '%')
+                ->offset($offset)->limit($request['limit'])->get();
+        } else {
+            $data = SavingCategories::offset($offset)->limit($request['limit'])->get();
+        }
         return response()->json([
             'status' => true,
             'message' => 'Saving Categories Retrieved Successfully',
             'data' => [
                 'totalPage' => ceil(SavingCategories::count() / $request['limit']),
                 'totalRows' => SavingCategories::count(),
-                'pageNumber' => $page,
+                'pageNumber' => intval($page),
                 'data' => $data,
             ]
         ]);
@@ -42,7 +50,6 @@ class SavingCategoriesController extends Controller
                 'status'  => true,
                 'message' => response($data)
             ]);
-            
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => false,
@@ -81,7 +88,6 @@ class SavingCategoriesController extends Controller
                 'message' => 'Data berhasil diupdate',
                 'data' => $data
             ]);
-            
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => false,

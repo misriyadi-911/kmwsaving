@@ -18,14 +18,14 @@ class NotificationController extends Controller
         $page = isset($request['page']) ? $request['page'] : 1;
         $request['limit'] = isset($request['limit']) ? $request['limit'] : 5;
         $offset = ($page - 1) * $request['limit'];
-        $data = Notification::where('status', 'unread')->offset($offset)->limit($request['limit'])->get();
+        $data = Notification::all();
         return response()->json([
             'status' => true,
             'message' => 'Notification Retrieved Successfully',
             'data' => [
                 'totalPage' => ceil(Notification::count() / $request['limit']),
                 'totalRows' => Notification::count(),
-                'pageNumber' => $page,
+                'pageNumber' => intval($page),
                 'unread_notif'=> $data->count(),
                 'data' => $data,
             ]
@@ -36,7 +36,7 @@ class NotificationController extends Controller
     {
         try {
             $data = new Notification();
-            $data->pilgrims_id = $request->input('pilgrims_id');
+            $data->user_account_id = $request->input('user_account_id');
             $data->transactional_savings_id = $request->input('transactional_savings_id');
             $data->message = $request->input('message');
             $data->save();
@@ -60,7 +60,7 @@ class NotificationController extends Controller
         try {
             $data = Notification::where('notification_id', $id)->first();
             $data->status = 'read';
-            $data->message = 'Pembayaran selesai';
+            $data->message = isset(request()->message) ? request()->message : $data->message;
             $data->save();
             return response()->json([
                 'status' => true,
@@ -75,25 +75,28 @@ class NotificationController extends Controller
         }
     }
 
-    public function update(Request $request, $id)
-    {
-        // try {
-        //     $data = SavingCategories::where('saving_category_id', $id)->first();
-        //     $data->name = $request->input('name');
-        //     $data->limit = $request->input('limit');
-        //     $data->save();
-        //     return response()->json([
-        //         'status'  => true,
-        //         'message' => 'Data berhasil diupdate',
-        //         'data' => $data
-        //     ]);
-            
-        // } catch (\Throwable $th) {
-        //     return response()->json([
-        //         'status' => false,
-        //         'message' => $th->getMessage()
-        //     ], 500);
-        // }
+    public function showByUserAccount(Request $request, $id) {
+        try {
+            $limit = isset($request['limit']) ? $request['limit'] : 5;
+            $offset = isset($request['page']) ? ($request['page'] - 1) * $limit : 0;
+            $data = Notification::orderBy('created_at', 'DESC')->where('user_account_id', $id);
+            $notifications = $data->limit($limit)->offset($offset)->get();
+            return response()->json([
+                'status' => true,
+                'message' => 'Notification Retrieved Successfully',
+                'data' => [
+                    'totalRows' => $data->count(),
+                    'pageNumber' => intval($request['page']),
+                    'data' => $notifications,
+                    'unread' => $data->where('status', 'unread')->count(),
+                ]
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
     }
 }
 

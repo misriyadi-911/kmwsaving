@@ -148,4 +148,9 @@ $router->group(['prefix' => '/notification'], function () use ($router) {
     $router->get('/', ['uses' => 'NotificationController@index']);
     $router->post('/', ['uses' => 'NotificationController@store']);
     $router->get('/{id}', ['uses' => 'NotificationController@show']);
+    $router->get('/mynotification/{id}', ['uses' => 'NotificationController@showByUserAccount']);
+});
+
+$router->group(['prefix'=> 'chat'], function () use ($router) {
+    $router->post('/test_pusher', 'ChatController@test_pusher');
 });
