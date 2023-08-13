@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Broadcast;
 
 class ChatController extends Controller {
   public function test_pusher(Request $request) {
-
     $chat = new ChatEvent($request->message);
     event($chat);
   }

@@ -7,7 +7,8 @@ use Illuminate\Http\Request;
 
 class DepartureInformationsController extends Controller
 {
-    public function __construct(\App\Models\DepartureInformation $departure) {
+    protected $departure;
+    public function __construct(DepartureInformation $departure) {
         $this->departure = $departure;
     }
     /**

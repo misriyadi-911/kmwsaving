@@ -3,13 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Admin;
-use App\Models\Pilgrims;
 use App\Models\Saldo;
 use App\Models\TransactionalSavings;
 use App\Models\DepartureInformation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\FacadesDB;
+
 
 class AdminController extends Controller
 {
