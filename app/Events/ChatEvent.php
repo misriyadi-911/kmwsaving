@@ -11,6 +11,7 @@ class ChatEvent implements ShouldBroadcast
   use InteractsWithSockets, SerializesModels;
 
   public $message;
+  private $user;
   public function __construct($message)
   {
     $this->message = $message;
@@ -18,10 +19,11 @@ class ChatEvent implements ShouldBroadcast
 
   public function broadcastOn()
   {
-    return ['my-channel'];
+    return ['testing'];
   }
   public function broadcastAs() {
-    return 'ChatEvent';
+    return 'event';
   }
+
 }
 

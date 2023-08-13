@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ChatEvent;
 use App\Models\DepartureInformation;
 use App\Models\Notification;
 use App\Models\Pilgrims;
@@ -114,6 +115,9 @@ class PilgrimsController extends Controller
                     'message' => 'Pengajuan Setoran Baru',
                 ]);
             }
+            $message = new ChatEvent('Pengajuan Setoran Baru');
+            $message->broadcastOn();
+            event($message);
             return response()->json([
                 'status' => true,
                 'message' => 'Saldo Retrieved Successfully',
