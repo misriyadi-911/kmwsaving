@@ -79,7 +79,10 @@ class NotificationController extends Controller
         try {
             $limit = isset($request['limit']) ? $request['limit'] : 5;
             $offset = isset($request['page']) ? ($request['page'] - 1) * $limit : 0;
-            $data = Notification::orderBy('created_at', 'DESC')->where('user_account_id', $id);
+            $data = Notification::orderByRaw("FIELD(status , 'unread', 'read')")
+            ->orderBy('notification.created_at', 'desc')
+            ->join('user_account', 'notification.user_account_id', '=', 'user_account.user_account_id')
+            ->where('user_account.user_account_id', $id);
             $notifications = $data->limit($limit)->offset($offset)->get();
             return response()->json([
                 'status' => true,

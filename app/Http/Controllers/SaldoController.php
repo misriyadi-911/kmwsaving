@@ -7,7 +7,8 @@ use Illuminate\Http\Request;
 
 class SaldoController extends Controller
 {
-    public function __construct(\App\Models\Saldo $saldo) {
+    protected $saldo;
+    public function __construct(Saldo $saldo) {
         $this->saldo = $saldo;
     }
     /**

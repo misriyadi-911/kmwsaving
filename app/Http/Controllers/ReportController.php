@@ -51,6 +51,8 @@ class ReportController extends Controller
         $data = $data->where('user_account.user_account_id', $id);
       }
 
+      $total = $data->get()->count();
+
       $data = $data->offset($offset)->limit($limit)->select(
         'transactional_savings.transactional_savings_id',
         'transactional_savings.created_at',
@@ -61,15 +63,16 @@ class ReportController extends Controller
         'saving_categories.name as category',
         'pilgrims.kode as kode',
         'saving_categories.limit as limit',
-        'saldo.nominal as nominal_saldo'
+        'saldo.nominal as nominal_saldo',
+        'transactional_savings.saldo as saldo'
       )->get();
 
       return response()->json([
         'status'  => true,
         'message' => 'Data retieved successfully',
         'data' => [
-          'totalPage' => ceil($data->count() / $limit),
-          'totalRows' => $data->count(),
+          'totalPage' => ceil($total / $limit),
+          'totalRows' => $total,
           'pageNumber' => intval($page),
           'data' => $data,
         ]
@@ -133,7 +136,7 @@ class ReportController extends Controller
         'user_account.username',
         'saving_categories.name as category',
         'pilgrims.kode as kode',
-        'saldo.nominal as nominal_saldo'
+        'transactional_savings.saldo as saldo'
       )->get();
 
       return response()->json([
@@ -201,6 +204,7 @@ class ReportController extends Controller
         'saving_categories.name as category',
         'pilgrims.kode as kode',
         'saldo.nominal as nominal_saldo',
+        'transactional_savings.saldo as saldo',
         'saving_categories.limit as limit'
       )->get();
       $filename = 'uploads/' . time() . '.csv';
@@ -220,7 +224,7 @@ class ReportController extends Controller
           $item->username,
           $item->category,
           $item->nominal,
-          $item->nominal_saldo,
+          $item->saldo,
         ]);
       }
       fclose($csv);

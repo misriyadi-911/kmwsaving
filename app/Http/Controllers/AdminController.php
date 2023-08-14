@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers;
 
+
 use App\Models\Admin;
 use App\Models\Saldo;
 use App\Models\TransactionalSavings;
 use App\Models\DepartureInformation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
+use App\Utils\Notification;
+use App\Models\Notification as ModelsNotification;
 
 class AdminController extends Controller
 {
@@ -55,25 +57,25 @@ class AdminController extends Controller
             $page = isset($request['page']) ? $request['page'] : 1;
             $request['limit'] = isset($request['limit']) ? $request['limit'] : 10;
             $offset = ($page - 1) * $request['limit'];
-            $data = Saldo::join('pilgrims', 'saldo.pilgrims_id', '=', 'pilgrims.pilgrims_id')
-                ->join('user_account', 'user_account.user_account_id', '=', 'pilgrims.user_account_id')
-                ->join('saving_categories', 'pilgrims.saving_category_id', '=', 'saving_categories.saving_category_id');
-                if(isset($request['search'])) {
-                    $data = $data->orWhere('pilgrims.kode', 'like', '%' .$request['search']. '%')
-                    ->orWhere('user_account.username', 'like', '%' .$request['search']. '%')
-                    ->orWhere('saving_categories.name', 'like', '%' .$request['search']. '%')
-                    ->orWhere('pilgrims.address', 'like', '%' .$request['search']. '%')
-                    ->orWhere('saldo.nominal', 'like', '%' .$request['search']. '%');
-                }
-
+            $data = Saldo::rightJoin('pilgrims', 'saldo.pilgrims_id', '=', 'pilgrims.pilgrims_id')
+                ->leftJoin('user_account', 'pilgrims.user_account_id', '=', 'user_account.user_account_id')
+                ->leftJoin('saving_categories', 'pilgrims.saving_category_id', '=', 'saving_categories.saving_category_id');
+            if (isset($request['search'])) {
+                $data = $data->orWhere('pilgrims.kode', 'like', '%' . $request['search'] . '%')
+                    ->orWhere('user_account.username', 'like', '%' . $request['search'] . '%')
+                    ->orWhere('saving_categories.name', 'like', '%' . $request['search'] . '%')
+                    ->orWhere('pilgrims.address', 'like', '%' . $request['search'] . '%')
+                    ->orWhere('saldo.nominal', 'like', '%' . $request['search'] . '%');
+            }
+            $total = $data->get()->count();
             $data = $data->offset($offset)->limit($request['limit'])->get();
 
             return response()->json([
                 'status'  => true,
                 'message' => 'Data retieved successfully',
                 'data' => [
-                    'totalPage' => ceil($data->count() / $request['limit']),
-                    'totalRows' => $data->count(),
+                    'totalPage' => ceil($total / $request['limit']),
+                    'totalRows' => $total,
                     'pageNumber' => intval($page),
                     'data' => $data,
                 ]
@@ -109,9 +111,20 @@ class AdminController extends Controller
     public function setor_tabungan(Request $request, $id)
     {
         try {
-            $data_tabungan = DB::select("SELECT saldo.saldo_id, saldo.nominal, pilgrims.bank_account_name, pilgrims.address, pilgrims.saving_category_id FROM saldo 
-            INNER JOIN pilgrims ON saldo.pilgrims_id = pilgrims.pilgrims_id 
+            $data_tabungan = DB::select("SELECT saldo.saldo_id, saldo.nominal, pilgrims.bank_account_name, pilgrims.address, pilgrims.saving_category_id, saving_categories.limit, pilgrims.pilgrims_id, pilgrims.user_account_id
+            FROM saldo 
+            JOIN pilgrims ON saldo.pilgrims_id = pilgrims.pilgrims_id 
+            JOIN saving_categories ON pilgrims.saving_category_id = saving_categories.saving_category_id
             WHERE pilgrims.pilgrims_id = '$id'");
+
+
+            if ($data_tabungan[0]->limit < $data_tabungan[0]->nominal) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Jamaah ini sudah melebihi limit pembayaran',
+                    'data' => $data_tabungan[0]
+                ]);
+            }
 
             $data = new TransactionalSavings();
             $data->pilgrims_id = $id;
@@ -125,6 +138,16 @@ class AdminController extends Controller
                 $saldo->save();
             }
 
+
+            $publishResponse = new Notification();
+            $publishResponse->sendNotification('jamaah-' . $data_tabungan[0]->user_account_id, 'Pemberitahuan', 'Saldo anda telah diverifikasi oleh administrator');
+
+            ModelsNotification::create([
+                'user_account_id' => $data_tabungan[0]->user_account_id,
+                'transactional_savings_id' => $data->transactional_savings_id,
+                'message' => 'Tabungan anda telah diverifikasi oleh administrator'
+            ]);
+
             return response()->json([
                 'status'  => true,
                 'message' => 'Setor tabungan berhasil',
@@ -137,6 +160,7 @@ class AdminController extends Controller
             ], 500);
         }
     }
+
 
     public function data_verifikasi()
     {
@@ -152,20 +176,20 @@ class AdminController extends Controller
 
             if (isset($request['search'])) {
                 $data_tabungan = $data_tabungan
-                ->orWhere('pilgrims.kode', 'like', '%' .$request['search']. '%')
-                ->orWhere('user_account.username', 'like', '%' .$request['search']. '%')
-                ->orWhere('transactional_savings.nominal', 'like', '%' .$request['search']. '%');
+                    ->orWhere('pilgrims.kode', 'like', '%' . $request['search'] . '%')
+                    ->orWhere('user_account.username', 'like', '%' . $request['search'] . '%')
+                    ->orWhere('transactional_savings.nominal', 'like', '%' . $request['search'] . '%');
             }
 
+            $total = $data_tabungan->get()->count();
             $data_tabungan = $data_tabungan->offset($offset)->limit($limit)->get();
-            
 
             return response()->json([
                 'status'  => true,
                 'message' => 'Data retieved successfully',
                 'data' => [
-                    'totalPage' => ceil($data_tabungan->count() / $limit),
-                    'totalRows' => $data_tabungan->count(),
+                    'totalPage' => ceil($total / $limit),
+                    'totalRows' => $total,
                     'pageNumber' => intval($page),
                     'data' => $data_tabungan,
                 ]
@@ -209,10 +233,10 @@ class AdminController extends Controller
     {
         try {
             $data_tabungan = TransactionalSavings::join('pilgrims', 'transactional_savings.pilgrims_id', '=', 'pilgrims.pilgrims_id')
-                ->where('pilgrims.pilgrims_id', '=', $id)
+                ->where('transactional_savings.transactional_savings_id', '=', $id)
                 ->first();
-
             $data_tabungan->type = $request->input('type');
+            $data_tabungan->saldo = $data_tabungan->saldo + $data_tabungan->nominal;
 
             if ($request->type == 'diverifikasi') {
                 $exist = Saldo::where('pilgrims_id', $data_tabungan->pilgrims_id)->first();
@@ -382,6 +406,37 @@ class AdminController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => $th->getMessage()
+            ], 500);
+        }
+    }
+
+    public function editSetor(Request $request, $id)
+    {
+        try {
+            $data_tabungan = Saldo::join('pilgrims', 'saldo.pilgrims_id', '=', 'pilgrims.pilgrims_id')
+                ->where('pilgrims.pilgrims_id', $id)->first();
+            $data_tabungan->nominal = $data_tabungan->nominal - $request->input('nominal');
+            $data_tabungan->save();
+
+            $data = TransactionalSavings::where('pilgrims_id', $id)->first();
+
+            $publishResponse = new Notification();
+            $publishResponse->sendNotification('jamaah-' . $data_tabungan->user_account_id, 'Pemberitahuan', 'Saldo anda ditarik oleh administrator, sebesar Rp. ' . number_format($request->input('nominal'), 0, ',', '.'));
+
+            ModelsNotification::create([
+                'user_account_id' => $data_tabungan->user_account_id,
+                'transactional_savings_id' => $data->transactional_savings_id,
+                'message' => 'Saldo anda ditarik oleh administrator, sebesar Rp. ' . number_format($request->input('nominal'), 0, ',', '.')
+            ]);
+            return response()->json([
+                'status'  => true,
+                'message' => 'Sukses mengubah status',
+                'data' => $data_tabungan
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage(),
             ], 500);
         }
     }

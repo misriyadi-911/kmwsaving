@@ -4,13 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Events\ChatEvent;
 use App\Models\DepartureInformation;
-use App\Models\Notification;
+use App\Models\Notification as ModelsNotification;
 use App\Models\Pilgrims;
 use App\Models\Saldo;
 use App\Models\TransactionalSavings;
 use App\Models\UserAccount;
 use Illuminate\Http\Request;
-
+use App\Utils\Notification;
 class PilgrimsController extends Controller
 {
     protected $pilgrim;
@@ -36,10 +36,10 @@ class PilgrimsController extends Controller
         if ($search) {
             $data = $data->where('user_account.username', 'like', '%' . $search . '%')
                 ->orWhere('kode', 'like', '%' . $search . '%')
-                ->orWhere('saving_categories.name', 'like', '%'. $search . '%')
+                ->orWhere('saving_categories.name', 'like', '%' . $search . '%')
                 ->orWhere('address', 'like', '%' . $search . '%');
         }
-       $data = $data->offset($offset)->limit($request['limit'])->get();
+        $data = $data->offset($offset)->limit($request['limit'])->get();
         return response()->json([
             'status' => true,
             'message' => 'Saving Categories Retrieved Successfully',
@@ -101,15 +101,24 @@ class PilgrimsController extends Controller
     {
         try {
             $id = auth()->user()->user_account_id;
+            $saldo = Saldo::join('pilgrims', 'saldo.pilgrims_id', '=', 'pilgrims.pilgrims_id')
+                ->where('user_account_id', $id)->first();
+            if(isset($saldo->nominal)) {
+                $saldo = $saldo->nominal;
+            } else {
+                $saldo = 0;
+            }
+            $pilgrim_id = Pilgrims::where('user_account_id', $id)->first()->pilgrims_id;
             $data = TransactionalSavings::create([
-                'pilgrims_id' => Pilgrims::where('user_account_id', $id)->first()->pilgrims_id,
+                'pilgrims_id' => $pilgrim_id,
                 'nominal' => request()->input('nominal'),
                 'type' => 'belum',
+                'saldo' => $saldo,
                 'file_id' => request()->input('file_id')
             ]);
             $isAdmin = UserAccount::where('type', 'admin')->get();
             foreach ($isAdmin as $key => $value) {
-                Notification::create([
+                ModelsNotification::create([
                     'user_account_id' => $value->user_account_id,
                     'transactional_savings_id' => $data->transactional_savings_id,
                     'message' => 'Pengajuan Setoran Baru',
@@ -118,6 +127,15 @@ class PilgrimsController extends Controller
             $message = new ChatEvent('Pengajuan Setoran Baru');
             $message->broadcastOn();
             event($message);
+            $publishResponse = new Notification();
+            $publishResponse->sendNotification('admin', 'Pemberitahuan', 'Pengajuan Setoran baru');
+            $data = TransactionalSavings::where('pilgrims_id', $pilgrim_id)->first();
+
+            ModelsNotification::create([
+                'user_account_id' => $id,
+                'transactional_savings_id' => $data->transactional_savings_id,
+                'message' => 'Pengajuan Setoran baru'
+            ]);
             return response()->json([
                 'status' => true,
                 'message' => 'Saldo Retrieved Successfully',
@@ -192,7 +210,7 @@ class PilgrimsController extends Controller
         try {
             $data = new Pilgrims();
             $exist = Pilgrims::where('nik', $request->input('nik'))->first();
-            if($exist){
+            if ($exist) {
                 return response()->json([
                     'status' => false,
                     'message' => 'NIK sudah digunakan'
@@ -211,6 +229,10 @@ class PilgrimsController extends Controller
             $data->address = $request->input('address');
             $data->birth_date = $request->input('birth_day');
             $data->save();
+            Saldo::create([
+                'pilgrims_id' => $data->pilgrims_id,
+                'nominal' => 0
+            ]);
             return response()->json([
                 'status'  => true,
                 'message' => response($data)

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Saldo;
 use App\Models\TransactionalSavings;
 use Illuminate\Http\Request;
 
@@ -45,6 +46,8 @@ class TransactionalSavingsController extends Controller
             $data->pilgrims_id = $request->input('pilgrims_id');
             $data->nominal = $request->input('nominal');
             $data->type = $request->input('type');
+            $saldo = Saldo::where('pilgrims_id', $data->pilgrims_id)->sum('nominal');
+            $data->saldo = $saldo;
             $data->save();
             return response()->json([
                 'status'  => true,

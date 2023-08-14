@@ -43,6 +43,7 @@ $router->group(['prefix' => 'admin'], function () use ($router) {
     $router->get('/tabungan', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@data_tabungan']);
     $router->get('/tabungan/{id}', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@detail_tabungan']);
     $router->post('/tabungan/{id}', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@setor_tabungan']);
+    $router->put('/tabungan/tarik/{id}', ['middleware' => 'auth:' . Roles::$ADMIN, 'uses' => 'AdminController@editSetor']);
 });
 
 
