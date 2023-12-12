@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\Admin;
-use App\Models\Pilgrims;
 use App\Models\User;
 use App\Models\UserAccount;
 use App\Utils\HttpResponse;
@@ -66,7 +64,7 @@ class AuthController extends Controller
     } else {
       $exist = UserAccount::leftjoin('pilgrims', 'user_account.user_account_id', '=', 'pilgrims.user_account_id')->where('user_account.user_account_id', $me->user_account_id)->first();
     }
-    
+    // dd($exist);
     return HttpResponse::success($exist, 'Get user success');
   }
 

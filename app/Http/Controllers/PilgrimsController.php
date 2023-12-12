@@ -11,6 +11,8 @@ use App\Models\TransactionalSavings;
 use App\Models\UserAccount;
 use Illuminate\Http\Request;
 use App\Utils\Notification;
+use Illuminate\Support\Facades\DB;
+
 class PilgrimsController extends Controller
 {
     protected $pilgrim;
@@ -100,6 +102,7 @@ class PilgrimsController extends Controller
     public function setor()
     {
         try {
+            DB::beginTransaction();
             $id = auth()->user()->user_account_id;
             $saldo = Saldo::join('pilgrims', 'saldo.pilgrims_id', '=', 'pilgrims.pilgrims_id')
                 ->where('user_account_id', $id)->first();
@@ -128,7 +131,7 @@ class PilgrimsController extends Controller
             $message->broadcastOn();
             event($message);
             $publishResponse = new Notification();
-            $publishResponse->sendNotification('admin', 'Pemberitahuan', 'Pengajuan Setoran baru');
+            $publishResponse->sendNotification('admin', 'Pemberitahuan', 'Pengajuan Setoran baru dari jamaah');
             $data = TransactionalSavings::where('pilgrims_id', $pilgrim_id)->first();
 
             ModelsNotification::create([
@@ -136,12 +139,14 @@ class PilgrimsController extends Controller
                 'transactional_savings_id' => $data->transactional_savings_id,
                 'message' => 'Pengajuan Setoran baru'
             ]);
+            DB::commit();
             return response()->json([
                 'status' => true,
                 'message' => 'Saldo Retrieved Successfully',
                 'data' => $data
             ]);
         } catch (\Throwable $th) {
+            DB::rollBack();
             return response()->json([
                 'status' => false,
                 'message' => $th->getMessage()

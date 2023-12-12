@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Utils\Notification;
 use App\Models\Notification as ModelsNotification;
+use Illuminate\Support\Facades\Mail;
 
 class AdminController extends Controller
 {
@@ -92,9 +93,9 @@ class AdminController extends Controller
     {
         try {
             $data_tabungan = DB::select("SELECT saldo.*, pilgrims.*, saving_categories.*, user_account.* FROM saldo 
-             JOIN pilgrims ON saldo.pilgrims_id = pilgrims.pilgrims_id 
-             JOIN user_account ON pilgrims.user_account_id = user_account.user_account_id
-             JOIN saving_categories ON pilgrims.saving_category_id = saving_categories.saving_category_id WHERE pilgrims.pilgrims_id = '$id'");
+             RIGHT JOIN pilgrims ON saldo.pilgrims_id = pilgrims.pilgrims_id 
+             RIGHT JOIN user_account ON pilgrims.user_account_id = user_account.user_account_id
+             RIGHT JOIN saving_categories ON pilgrims.saving_category_id = saving_categories.saving_category_id WHERE pilgrims.pilgrims_id = '$id'");
             return response()->json([
                 'status'  => true,
                 'message' => 'Data retieved successfully',
@@ -111,12 +112,27 @@ class AdminController extends Controller
     public function setor_tabungan(Request $request, $id)
     {
         try {
-            $data_tabungan = DB::select("SELECT saldo.saldo_id, saldo.nominal, pilgrims.bank_account_name, pilgrims.address, pilgrims.saving_category_id, saving_categories.limit, pilgrims.pilgrims_id, pilgrims.user_account_id
+            DB::beginTransaction();
+            $data_tabungan = DB::select("SELECT saldo.saldo_id, saldo.nominal, pilgrims.bank_account_name, pilgrims.address, pilgrims.saving_category_id, saving_categories.limit, pilgrims.pilgrims_id, pilgrims.user_account_id, user_account.email, user_account.username
             FROM saldo 
             JOIN pilgrims ON saldo.pilgrims_id = pilgrims.pilgrims_id 
+            JOIN user_account ON pilgrims.user_account_id = user_account.user_account_id
             JOIN saving_categories ON pilgrims.saving_category_id = saving_categories.saving_category_id
             WHERE pilgrims.pilgrims_id = '$id'");
 
+            if(empty($data_tabungan)){
+                $data = Saldo::create([
+                    'pilgrims_id' => $id,
+                    'nominal' => 0
+                ]);
+                $data_tabungan = DB::select("SELECT saldo.saldo_id, saldo.nominal, pilgrims.bank_account_name, pilgrims.address, pilgrims.saving_category_id, saving_categories.limit, pilgrims.pilgrims_id, pilgrims.user_account_id, user_account.email, user_account.username
+                FROM saldo 
+                JOIN pilgrims ON saldo.pilgrims_id = pilgrims.pilgrims_id 
+                JOIN user_account ON pilgrims.user_account_id = user_account.user_account_id
+                JOIN saving_categories ON pilgrims.saving_category_id = saving_categories.saving_category_id
+                WHERE pilgrims.pilgrims_id = '$id'");
+            }
+           
 
             if ($data_tabungan[0]->limit < $data_tabungan[0]->nominal) {
                 return response()->json([
@@ -131,10 +147,11 @@ class AdminController extends Controller
             $data->nominal = $request->input('nominal');
             $data->type = $request->input('type') ? 'belum' : 'diverifikasi';
             $data->save();
-
+            $nominal = 0;
             if ($data->type == 'diverifikasi') {
                 $saldo = Saldo::find($data_tabungan[0]->saldo_id);
                 $saldo->nominal = $data_tabungan[0]->nominal + $data->nominal;
+                $nominal = $saldo->nominal;
                 $saldo->save();
             }
 
@@ -148,12 +165,29 @@ class AdminController extends Controller
                 'message' => 'Tabungan anda telah diverifikasi oleh administrator'
             ]);
 
+            $nominalPembayaran = number_format($request->input('nominal'), 0, ',', '.');
+            $nominal = number_format($nominal, 0, ',', '.');
+
+             Mail::send('email.diterima', [
+                'status_pembayaran' => $data->type == 'diverifikasi' ? 'Diverifikasi' : 'Belum diverifikasi',
+                'invoice_id' => "INV-" . $data->transactional_savings_id . $data_tabungan[0]->pilgrims_id . date('YmdHis'),
+                'nominal' => $nominalPembayaran,
+                'metode_pembayaran' => 'Setor Tunai Via Admin',
+                'waktu_pembayaran' => date('d-m-Y H:i') . ' WIB',
+                'total_saldo' => $nominal
+             ], function ($message) use ($data_tabungan) {
+                $message->to($data_tabungan[0]->email, $data_tabungan[0]->username)->subject('Pemberitahuan Pembayaran');
+                $message->from('bincangbudidayaudang@gmail.com', 'noreply@kmwsaving.com');
+            });
+
+            DB::commit();
             return response()->json([
                 'status'  => true,
                 'message' => 'Setor tabungan berhasil',
                 'data' => $data
             ]);
         } catch (\Throwable $th) {
+            DB::rollBack();
             return response()->json([
                 'status' => false,
                 'message' => $th->getMessage()
@@ -232,36 +266,69 @@ class AdminController extends Controller
     public function ganti_verifikasi(Request $request, $id)
     {
         try {
+            DB::beginTransaction();
             $data_tabungan = TransactionalSavings::join('pilgrims', 'transactional_savings.pilgrims_id', '=', 'pilgrims.pilgrims_id')
+                ->join('user_account', 'pilgrims.user_account_id', '=', 'user_account.user_account_id')
                 ->where('transactional_savings.transactional_savings_id', '=', $id)
                 ->first();
             $data_tabungan->type = $request->input('type');
             $data_tabungan->saldo = $data_tabungan->saldo + $data_tabungan->nominal;
 
+            $nominal = 0;
+            $nominalPembayaran = number_format($data_tabungan->nominal, 0, ',', '.');
             if ($request->type == 'diverifikasi') {
                 $exist = Saldo::where('pilgrims_id', $data_tabungan->pilgrims_id)->first();
                 if ($exist) {
                     $exist->nominal = $exist->nominal + $data_tabungan->nominal;
+                    $nominal = $exist->nominal + $data_tabungan->nominal;
                     $exist->save();
                 } else {
+                    $nominal = $data_tabungan->nominal;
                     Saldo::create([
                         'pilgrims_id' => $data_tabungan->pilgrims_id,
                         'nominal' => $data_tabungan->nominal
                     ]);
                 }
+                $nominal = number_format($nominal, 0, ',', '.');
+                Mail::send('email.diterima', [
+                    'status_pembayaran' => 'Diverifikasi',
+                    'invoice_id' => "INV-" . $data_tabungan->transactional_savings_id . $data_tabungan->pilgrims_id . date('YmdHis'),
+                    'nominal' => $nominalPembayaran,
+                    'metode_pembayaran' => 'Transfer Bank',
+                    'waktu_pembayaran' => date('d-m-Y H:i') . ' WIB',
+                    'total_saldo' => $nominal
+                 ], function ($message) use ($data_tabungan) {
+                    $message->to($data_tabungan->email, $data_tabungan->username)->subject('Pemberitahuan Pembayaran');
+                    $message->from('bincangbudidayaudang@gmail.com', 'noreply@kmwsaving.com');
+                });
             }
 
+            
             if ($request->input('comment')) {
                 $data_tabungan->comment = $request->input('comment');
+                Mail::send('email.ditolak', [
+                    'status_pembayaran' => 'Diverifikasi',
+                    'invoice_id' => "INV-" . $data_tabungan->transactional_savings_id . $data_tabungan->pilgrims_id . date('YmdHis'),
+                    'nominal' => $nominalPembayaran,
+                    'metode_pembayaran' => 'Transfer Bank',
+                    'waktu_pembayaran' => date('d-m-Y H:i') . ' WIB',
+                    'total_saldo' => $nominal,
+                    'alasan' => $request->input('comment')
+                 ], function ($message) use ($data_tabungan) {
+                    $message->to($data_tabungan->email, $data_tabungan->username)->subject('Pemberitahuan Pembayaran');
+                    $message->from('bincangbudidayaudang@gmail.com', 'noreply@kmwsaving.com');
+                });
             }
             $data_tabungan->save();
-
+           
+            DB::commit();
             return response()->json([
                 'status'  => true,
                 'message' => 'Sukses mengubah status',
                 'data' => $data_tabungan
             ]);
         } catch (\Throwable $th) {
+            DB::rollBack();
             return response()->json([
                 'status' => false,
                 'message' => $th->getMessage()
