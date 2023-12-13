@@ -104,6 +104,21 @@ class PilgrimsController extends Controller
         try {
             DB::beginTransaction();
             $id = auth()->user()->user_account_id;
+            $exist = TransactionalSavings::where('pilgrims_id', Pilgrims::where('user_account_id', $id)->first()->pilgrims_id)->where('type', 'belum')->first();
+            if ($exist) {
+                $isAdmin = UserAccount::where('type', 'admin')->get();
+                foreach ($isAdmin as $key => $value) {
+                    ModelsNotification::create([
+                        'user_account_id' => $value->user_account_id,
+                        'transactional_savings_id' => $exist->transactional_savings_id,
+                        'message' => 'Segera proses pengajuan setoran dari jamaah!',
+                    ]);
+                }
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Anda masih memiliki pengajuan setoran yang belum diproses'
+                ], 500);
+            }
             $saldo = Saldo::join('pilgrims', 'saldo.pilgrims_id', '=', 'pilgrims.pilgrims_id')
                 ->where('user_account_id', $id)->first();
             if(isset($saldo->nominal)) {

@@ -30,6 +30,24 @@ class FilesController extends Controller
                 $exist->delete();
             }
 
+            if(!$request->hasFile('file')) return response()->json([
+                'status' => false,
+                'message' => 'File tidak ditemukan'
+            ], 500);
+
+            $this->validate($request, [
+                'user_id' => 'required',
+                'name' => 'required',
+                'file' => 'required|mimes:pdf,jpg,jpeg,png|max:2048'
+            ]);
+            
+            $fileName = explode(' ', $request->input('name'));
+            if(in_array('Setor', $fileName)){
+                $this->validate($request, [
+                    'file' => 'required|mimes:jpg,jpeg,png,svg|max:2048'
+                ]);
+            }
+
             $data = new Files();
             $data->user_id = $request->input('user_id');
             $data->name = $request->input('name');
@@ -39,8 +57,6 @@ class FilesController extends Controller
             $data->file = 'uploads/files/jamaah/' . $filename;
 
             $data->save();
-
-
 
             return response()->json([
                 'status'  => true,

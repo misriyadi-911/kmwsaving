@@ -242,7 +242,7 @@ class AdminController extends Controller
             $data_tabungan = TransactionalSavings::join('pilgrims', 'transactional_savings.pilgrims_id', '=', 'pilgrims.pilgrims_id')
                 ->join('user_account', 'pilgrims.user_account_id', '=', 'user_account.user_account_id')
                 ->join('files', 'transactional_savings.file_id', '=', 'files.file_id')
-                ->where('pilgrims.pilgrims_id', '=', $id)
+                ->where('transactional_savings.transactional_savings_id', '=', $id)
                 ->get();
             if ($data_tabungan[0]) {
                 return response()->json([
@@ -480,27 +480,49 @@ class AdminController extends Controller
     public function editSetor(Request $request, $id)
     {
         try {
-            $data_tabungan = Saldo::join('pilgrims', 'saldo.pilgrims_id', '=', 'pilgrims.pilgrims_id')
-                ->where('pilgrims.pilgrims_id', $id)->first();
-            $data_tabungan->nominal = $data_tabungan->nominal - $request->input('nominal');
-            $data_tabungan->save();
-
-            $data = TransactionalSavings::where('pilgrims_id', $id)->first();
-
-            $publishResponse = new Notification();
-            $publishResponse->sendNotification('jamaah-' . $data_tabungan->user_account_id, 'Pemberitahuan', 'Saldo anda ditarik oleh administrator, sebesar Rp. ' . number_format($request->input('nominal'), 0, ',', '.'));
-
-            ModelsNotification::create([
-                'user_account_id' => $data_tabungan->user_account_id,
-                'transactional_savings_id' => $data->transactional_savings_id,
-                'message' => 'Saldo anda ditarik oleh administrator, sebesar Rp. ' . number_format($request->input('nominal'), 0, ',', '.')
+            DB::beginTransaction();
+            $saldo = Saldo::where('pilgrims_id', $id)->first();
+            if(!$saldo) {
+                $saldo = Saldo::create([
+                    'pilgrims_id' => $id,
+                    'nominal' => 0
+                ]);
+            }
+            if ($saldo->nominal < $request->input('nominal')) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Saldo tidak mencukupi',
+                    'data' => $saldo
+                ]);
+            }
+            
+            $data = TransactionalSavings::create([
+                'pilgrims_id' => $id,
+                'nominal' => $request->input('nominal') * -1,
+                'type' => 'belum'
             ]);
+
+            
+            // $data_tabungan = T
+
+
+
+            // $publishResponse = new Notification();
+            // $publishResponse->sendNotification('jamaah-' . $data_tabungan->user_account_id, 'Pemberitahuan', 'Saldo anda ditarik oleh administrator, sebesar Rp. ' . number_format($request->input('nominal'), 0, ',', '.'));
+
+            // ModelsNotification::create([
+            //     'user_account_id' => $data_tabungan->user_account_id,
+            //     'transactional_savings_id' => $data->transactional_savings_id,
+            //     'message' => 'Saldo anda ditarik oleh administrator, sebesar Rp. ' . number_format($request->input('nominal'), 0, ',', '.')
+            // ]);
+            DB::commit();
             return response()->json([
                 'status'  => true,
                 'message' => 'Sukses mengubah status',
                 'data' => $data_tabungan
             ]);
         } catch (\Throwable $th) {
+            DB::rollBack();
             return response()->json([
                 'status' => false,
                 'message' => $th->getMessage(),

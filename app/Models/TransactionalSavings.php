@@ -8,7 +8,7 @@ class TransactionalSavings extends Model
 {
     protected $table = 'transactional_savings';
     protected $primaryKey = 'transactional_savings_id';
-    protected $fillable = ['pilgrims_id', 'nominal', 'type', 'saldo'];
+    protected $fillable = ['pilgrims_id', 'nominal', 'type', 'saldo', 'file_id', 'comment'];
 
     public function pilgrim () {
         return $this->belongsTo(Pilgrims::class, 'pilgrims_id', 'pilgrims_id');
