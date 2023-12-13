@@ -516,11 +516,11 @@ class AdminController extends Controller
             //     'message' => 'Saldo anda ditarik oleh administrator, sebesar Rp. ' . number_format($request->input('nominal'), 0, ',', '.')
             // ]);
             DB::commit();
-            return response()->json([
-                'status'  => true,
-                'message' => 'Sukses mengubah status',
-                'data' => $data_tabungan
-            ]);
+            // return response()->json([
+            //     'status'  => true,
+            //     'message' => 'Sukses mengubah status',
+            //     'data' => $data_tabungan
+            // ]);
         } catch (\Throwable $th) {
             DB::rollBack();
             return response()->json([
