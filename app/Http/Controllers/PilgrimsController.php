@@ -127,6 +127,13 @@ class PilgrimsController extends Controller
                 $saldo = 0;
             }
             $pilgrim_id = Pilgrims::where('user_account_id', $id)->first()->pilgrims_id;
+            
+            if(!request()->input('file_id')) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'File tidak boleh kosong'
+                ], 500);
+            }
             $data = TransactionalSavings::create([
                 'pilgrims_id' => $pilgrim_id,
                 'nominal' => request()->input('nominal'),

@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Utils\Notification;
 use App\Models\Notification as ModelsNotification;
+use App\Models\Pilgrims;
+use App\Models\UserAccount;
 use Illuminate\Support\Facades\Mail;
 
 class AdminController extends Controller
@@ -119,6 +121,15 @@ class AdminController extends Controller
             JOIN user_account ON pilgrims.user_account_id = user_account.user_account_id
             JOIN saving_categories ON pilgrims.saving_category_id = saving_categories.saving_category_id
             WHERE pilgrims.pilgrims_id = '$id'");
+
+            $exist = TransactionalSavings::where('pilgrims_id', $id)->where('type', 'belum')->first();
+
+            if ($exist) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Jamaah ini sudah melakukan setor tunai, silahkan verifikasi terlebih dahulu',
+                ]);
+            }
 
             if(empty($data_tabungan)){
                 $data = Saldo::create([
@@ -481,6 +492,7 @@ class AdminController extends Controller
     {
         try {
             DB::beginTransaction();
+            
             $saldo = Saldo::where('pilgrims_id', $id)->first();
             if(!$saldo) {
                 $saldo = Saldo::create([
@@ -493,34 +505,46 @@ class AdminController extends Controller
                     'status' => false,
                     'message' => 'Saldo tidak mencukupi',
                     'data' => $saldo
-                ]);
+                ], 500);
             }
             
+            $exist = TransactionalSavings::where('pilgrims_id', $id)->where('type', 'belum')->first();
+            if ($exist) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Terdapat transaksi yang belum diverifikasi pada jamaah ini',
+                ], 500);
+            }
+
+
             $data = TransactionalSavings::create([
                 'pilgrims_id' => $id,
                 'nominal' => $request->input('nominal') * -1,
-                'type' => 'belum'
+                'type' => 'diverifikasi',
+                'saldo' => $saldo->nominal - $request->input('nominal')
             ]);
 
-            
-            // $data_tabungan = T
+            $saldo->nominal = $saldo->nominal - $request->input('nominal');
+            $saldo->save();
 
+            $user = Pilgrims::join('user_account', 'pilgrims.user_account_id', '=', 'user_account.user_account_id')
+                ->where('pilgrims.pilgrims_id', $id)
+                ->first();
 
+            $publishResponse = new Notification();
+            $publishResponse->sendNotification('jamaah-' . $user->user_account_id, 'Pemberitahuan', 'Saldo anda ditarik oleh administrator, sebesar Rp. ' . number_format($request->input('nominal'), 0, ',', '.'));
 
-            // $publishResponse = new Notification();
-            // $publishResponse->sendNotification('jamaah-' . $data_tabungan->user_account_id, 'Pemberitahuan', 'Saldo anda ditarik oleh administrator, sebesar Rp. ' . number_format($request->input('nominal'), 0, ',', '.'));
-
-            // ModelsNotification::create([
-            //     'user_account_id' => $data_tabungan->user_account_id,
-            //     'transactional_savings_id' => $data->transactional_savings_id,
-            //     'message' => 'Saldo anda ditarik oleh administrator, sebesar Rp. ' . number_format($request->input('nominal'), 0, ',', '.')
-            // ]);
+            ModelsNotification::create([
+                'user_account_id' => $user->user_account_id,
+                'transactional_savings_id' => $data->transactional_savings_id,
+                'message' => 'Saldo anda ditarik oleh administrator, sebesar Rp. ' . number_format($request->input('nominal'), 0, ',', '.')
+            ]);
             DB::commit();
-            // return response()->json([
-            //     'status'  => true,
-            //     'message' => 'Sukses mengubah status',
-            //     'data' => $data_tabungan
-            // ]);
+            return response()->json([
+                'status'  => true,
+                'message' => 'Sukses mengubah status',
+                'data' => $data
+            ]);
         } catch (\Throwable $th) {
             DB::rollBack();
             return response()->json([
